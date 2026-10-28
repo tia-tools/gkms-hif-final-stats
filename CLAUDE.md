@@ -44,6 +44,10 @@ A static web page for 学園アイドルマスター players of the H.I.F. scena
 
 <!-- Language-specific conventions, naming patterns, import ordering, or formatting tools in use. -->
 
+## Tasks
+
+Tasks live on the GitHub board `tia-tools` project `1`; work them with the `task-board` skill. Merges go through PRs into `develop`, the default branch; a PR closes its issue with `Closes #N`.
+
 ## Commit Discipline
 
 - Follow Git-flow workflow to manage the branches
