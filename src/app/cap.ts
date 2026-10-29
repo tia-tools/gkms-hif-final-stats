@@ -6,7 +6,7 @@
 /** Lv0–Lv6 → the cap per stat. */
 export const CAP_BY_LEVEL: readonly number[] = [3000, 3050, 3080, 3110, 3140, 3170, 3200];
 export const DEFAULT_CAP_LEVEL = 6;
-export const CAP_STORAGE_KEY = "gmks-hif-final-stats.capLevel";
+export const CAP_STORAGE_KEY = "gkms-hif-final-stats.capLevel";
 
 /** The stored level, or the default when nothing valid is stored. */
 export function capLevelOf(stored: string | null): number {
