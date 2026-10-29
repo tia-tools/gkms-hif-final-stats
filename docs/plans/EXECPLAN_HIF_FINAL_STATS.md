@@ -39,7 +39,13 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-29 12:02Z) Milestone 5 reviewed by Codex in six rounds, each on a fresh snapshot that it did not write back from: 7, 5, 3, 1 and 1 findings, each fixed with a test that fails against the old code or answered (`Surprises & Discoveries`), then `CODEX VERDICT: LGTM`. On the branch head `bun test` passes 241, type-check, lint and `bun run build` are clean, and the DMM pair still reads 6971 in Chrome.
 - [x] (2026-10-29 12:56Z) Milestone 5 merged into `develop` by pull request #14 (merge commit ede44c3), closing #12.
 - [x] (2026-10-29 13:08Z) The sibling's card file is live: gakumas-supportcards released its `develop` into `main` (its pull request #58, merge ad66896). `https://gakumas-supportcards.tia.run/data/cards.v1.json` answers 200, format 1, 210 cards, and is byte-identical to `src/data/fixtures/cards.v1.json` (SHA-256 `b989a77e…`).
-- [ ] Milestone 6 (issue #15, branch `feature/m6-deploy`): deploy and CI gates. The GitHub ruleset is already in place: "protect main, master and develop", active, refusing deletion and non-fast-forward pushes.
+- [x] (2026-10-29 13:12Z) Milestone 6 (issue #15, branch `feature/m6-deploy`), the code:
+  - `infra/worker/wrangler.toml` for `gmks-hif-final-stats.tia.run`; `bunx wrangler@4 deploy --dry-run` reads it, lists both bindings and gives no warning;
+  - `.github/workflows/check.yml` and `deploy.yml`, adopted from the sibling;
+  - tests pinning both, and `infra/worker/README.md` with the deploy and verify steps.
+
+  `bun test` passes 249; type-check, lint and build are clean. The GitHub ruleset was already in place: "protect main, master and develop", active, refusing deletion and non-fast-forward pushes.
+- [ ] Milestone 6, the deployment: the two repository secrets set, a first deploy, and the live site reading the DMM pair as 6971 (G39).
 
 
 ## Surprises & Discoveries
@@ -350,6 +356,16 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
   Rationale: The reader needs only to tell the characters and the accessories apart, which small templates do. This avoids work in the sibling's pipeline and a new prefix in the bucket. The user chose it over having the sibling upload the layers to R2.
   Date/Author: 2026-10-29, user.
 
+- Decision G39: How the page is deployed, adopted from gakumas-supportcards.
+  - `main` is production and `develop` development. A release is a pull request from `develop` into `main`, and its merge is the deploy: `.github/workflows/deploy.yml` runs on that push, builds from `main`, and deploys only after the unit tests, the type check, the lint and the build pass. `check.yml` runs the same gates on every pull request into `develop`, read only, with no secrets.
+  - The Worker is deployed with `bunx wrangler@4 deploy` from `infra/worker/`, on the custom domain `gmks-hif-final-stats.tia.run`; Cloudflare manages its DNS record.
+  - It uses two repository secrets: `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_API_TOKEN`, an account-owned token. The token's least permissions are Workers Editor on this Worker and Workers Routes: Edit on the `tia.run` zone. The Worker only reads R2 through its binding.
+  - A token can name a Worker only once it exists, so the first deployment is by hand, or under a broader token that is narrowed after.
+  - The workflows' shape is pinned by `infra/workflows.test.ts`: triggers, read-only permissions, actions pinned to hashes, CI on the local Bun, every gate before the deploy. `infra/worker/wrangler.test.ts` keeps `run_worker_first` equal to the paths the Worker answers, and refuses an environment that would inherit the custom domain.
+  - Not adopted: the sibling's Dependabot updates, its Cloudflare token expiry check and its data-update workflow. This page has no scheduled job, and the first two are separate choices for the user.
+  Rationale: The sibling's model has deployed its site since 2026-09 and is the one the user's global rules expect (Git-flow, `main` receives only merges). Copying it keeps the two tia-tools sites alike.
+  Date/Author: 2026-10-29, agent (adopting the sibling's model).
+
 - Decision G38: How a read screenshot fills the page (`src/app/fill.ts`, `useScreenshots.ts`).
   - Each screenshot fills only its own tab's fields. 基本情報 fills the stats, bonuses, スター性, 親愛度, メダルもじゃ, and the held P-items with their fires left: ワッペン from the unlabelled slot, and each matched サポート item. A spent item and an item no card grants are not held. 編成 fills the six cards with their levels and 相談リフレッシュ.
   - An item the form already holds is dropped only when the read rules it out: its icon was compared with every slot of a whole row, and every サポート slot the row shows matched an item (for ワッペン, the row shows its slot). Otherwise it stays, ringed. An item whose icon did not load, a row cut by the image's edge, or a slot that matched nothing rules nothing out.
@@ -635,7 +651,11 @@ The reader's derived data is regenerated, never edited:
 - **カスタム layer templates** (G37): extract the 16 layers with the sibling's vendored GkmasObjectManager, then `bun scripts/custom-templates.ts <folder> <manifest version>` (205100:0075 on 2026-10-29). The file records the manifest and each layer PNG's SHA-256, since the art is not committed and no test can regenerate it. The extraction calls `gom.fetch()` and `download(…, convert_image=False)` from `gakumas-supportcards/scripts/images` and decodes each bundle with its `decode_texture`. Match names with `re.escape(name) + r"\.unity3d$"`, since the manifest's search anchors at the start and every name ends in `.unity3d`. Under the Claude Code sandbox it must run outside it (`Surprises & Discoveries`), and its output goes to `$TMPDIR`, never into this repository.
 - **The image snapshot** (G36), with the card data's fixture: for each card's `assetId` and each item's icon `assetId` in `src/data/fixtures/cards.v1.json`, download `https://gakumas-supportcards.tia.run/img/w192/img_general_<assetId>_full.webp` and `/img/w48/<assetId>.webp` into `src/reader/fixtures/w192/` and `w48/`. Pace the requests and retry: a burst drew transient 500s on 2026-10-29.
 
-Milestone 6: push to `main` via a release merge; open the live URL and repeat Milestone 5's check.
+Milestone 6: push to `main` via a release merge; open the live URL and repeat Milestone 5's check. The steps, in `infra/worker/README.md`:
+1. Set the repository secrets `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` (§ Deploy).
+2. Deploy once: by hand (`bun run build`, then `bunx wrangler deploy` in `infra/worker/` after `bunx wrangler login` on the tia-tools account), or through `deploy.yml` with a token broad enough for a Worker that does not exist yet.
+3. Release: a pull request from `develop` into `main`, merged; `deploy.yml` then deploys every later release.
+4. Verify with § Verify's `curl` lines, then drop the DMM pair into the live page: 6971, S5 short by 73.
 
 
 ## Validation and Acceptance
@@ -937,3 +957,5 @@ Revision note (2026-10-29, Milestone 5 started): Milestone 4 merged (#11), and M
 Revision note (2026-10-29, Milestone 5 built): the reader and its page are built. Added decisions G36 (the image snapshot), G37 (the カスタム layers as derived templates) and G38 (how a screenshot fills the page), four discoveries (the zoom range, the browser failure, the sandbox and TLS, the DMM item identities), the regeneration steps, the mutation records, the exports and the outcome.
 
 Revision note (2026-10-29, Milestone 6 started): Milestone 5 merged (#14). The sibling released its card file, and Milestone 6 is issue #15. Its ruleset was already applied when the repository was created.
+
+Revision note (2026-10-29, Milestone 6 built): the Worker's `wrangler.toml`, the check and deploy workflows, their tests and the Worker's README. Added decision G39 (the deployment) and the steps. The deployment itself waits for the repository secrets and a first deploy.
