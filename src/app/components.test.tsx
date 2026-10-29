@@ -8,10 +8,12 @@ import type { PanelState } from "../engine/total.ts";
 import { CARD_DATA, DMM_DECK, DMM_ITEMS, DMM_MEMORY } from "../test-support/dmm.ts";
 import { compute } from "./compute.ts";
 import { CountPanel } from "./CountPanel.tsx";
+import { DeckForm } from "./DeckForm.tsx";
 import { CardPicker } from "./CardPicker.tsx";
 import { PercentField, WholeField } from "./Fields.tsx";
 import { type FormState, emptyForm } from "./form.ts";
 import { ItemsForm } from "./ItemsForm.tsx";
+import { MemoryForm } from "./MemoryForm.tsx";
 import { itemChoices } from "./items.ts";
 import { Result } from "./Result.tsx";
 
@@ -65,7 +67,7 @@ describe("ItemsForm", () => {
   test("tapping an item marks it held, and its fires left are typed under it", async () => {
     const seen: Record<string, number | null>[] = [];
     const choices = itemChoices(DMM_DECK.map((s) => CARD_DATA.cards.find((c) => c.id === s.cardId)));
-    await act(() => render(<ItemsForm choices={choices} items={{ wappen: 4 }} onItems={(i) => seen.push(i)} medalMoja={false} onMedalMoja={() => {}} />, root));
+    await act(() => render(<ItemsForm choices={choices} items={{ wappen: 4 }} onItems={(i) => seen.push(i)} medalMoja={false} onMedalMoja={() => {}} check={new Set()} />, root));
     await act(() => must(root.querySelector<HTMLButtonElement>('button[aria-label="完全制覇でポン"]'), "the item").click());
     await act(() => type(must(root.querySelector<HTMLInputElement>('input[aria-label="H.I.Fワッペン 残り"]'), "ワッペン's field"), "3"));
     expect(seen).toEqual([{ wappen: 4, "pitem_03-3-263-0": null }, { wappen: 3 }]);
@@ -121,5 +123,24 @@ describe("WholeField", () => {
     await act(() => render(<WholeField label="b" class="w-14" value={1} onChange={() => {}} />, root));
     const classes = root.querySelector("input")?.className.split(" ") ?? [];
     expect([classes.includes("w-14"), classes.includes("w-full")]).toEqual([true, false]);
+  });
+});
+
+const CARDS = new Map(CARD_DATA.cards.map((c) => [c.id, c]));
+
+describe("after reading a screenshot", () => {
+  test("a field to check carries the mark, and the others do not", async () => {
+    await act(() => render(<MemoryForm form={DMM_FORM} update={() => {}} capLevel={0} onCapLevel={() => {}} check={new Set(["params.dance"])} />, root));
+    const ring = (label: string) => must(root.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`), label).className.includes("ring-amber-400");
+    expect([ring("ダンス"), ring("ボーカル")]).toEqual([true, false]);
+  });
+
+  test("a slot offers the tile's next-best cards, and taking one keeps the level", async () => {
+    const seen: unknown[] = [];
+    const alternatives = [["s_card-3-0042", "s_card-3-0001"], [], [], [], [], []];
+    await act(() => render(<DeckForm deck={DMM_DECK} cards={CARDS} levelLimits={CARD_DATA.levelLimits} onDeck={(d) => seen.push(d[0])} refreshesLeft={1} onRefreshes={() => {}} check={new Set()} alternatives={alternatives} />, root));
+    const name = must(CARDS.get("s_card-3-0042"), "the card").name;
+    await act(() => must(root.querySelector<HTMLButtonElement>(`button[aria-label="${name}"]`), "the alternative").click());
+    expect(seen).toEqual([{ cardId: "s_card-3-0042", level: 60 }]);
   });
 });

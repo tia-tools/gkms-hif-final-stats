@@ -11,7 +11,7 @@ A player chasing S5 makes many 選抜試験メモリー and has to decide which 
 
 To see it working, run `bun run dev`, open `http://localhost:5173`, drop the two DMM sample screenshots, and read the S5 line. The worked example in `Artifacts and Notes` predicts what that line should say.
 
-The work is tracked on the GitHub board `tia-tools` project 1, one issue per milestone branch (decision G20): Milestone 1 was issue #4, and Milestone 2 is issue #6.
+The work is tracked on the GitHub board `tia-tools` project 1, one issue per milestone branch (decision G20): Milestones 1 to 5 are issues #4, #6, #8, #10 and #12.
 
 
 ## Progress
@@ -19,8 +19,8 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-28 14:40Z) Research: H.I.F. rating formula, 本戦 schedule, memory carry-over, prior art (gakumas-tools), art-matching feasibility on the samples. Findings in `Context and Orientation` and `Surprises & Discoveries`.
 - [x] (2026-10-28 15:10Z) Design interview (grill-me) with the user: decisions G1–G13 in the `Decision Log`.
 - [x] (2026-10-28 15:20Z) Repository scaffolded from `Taka499/project-template` at b52b8df into `~/Developer/gmks-hif-final-stats`; `docs/adr/0001-card-data-and-art-are-shared-with-gakumas-supportcards-at-runtime.md` written; this plan drafted.
-- [ ] Open item O2: decide whether the sample screenshots may be committed as test fixtures in this public repository. Needed by Milestone 5.
-- [ ] Open item O3: choose the tia.run subdomain. Needed by Milestone 6.
+- [x] (2026-10-29 09:20Z) Open item O2: the user allowed the sample screenshots to be committed as test fixtures as they are (decision G32).
+- [x] (2026-10-29 09:20Z) Open item O3: the subdomain is `gmks-hif-final-stats.tia.run` (decision G34).
 - [x] (2026-10-29 01:10Z) Milestone 1: toolchain, rating arithmetic, スター性 bound, schedule-only bound. Issue #4, branch `feature/m1-rating-schedule`: `bun test` 30 pass, type-check and lint clean, every guard seen red by mutation (`Artifacts and Notes`).
 - [x] (2026-10-29 02:07Z) Milestone 1 merged into `develop` by pull request #5 (merge commit 841b7be), closing #4.
 - [x] (2026-10-29 03:02Z) Milestone 2 (issue #6, branch `feature/m2-card-data`), sibling half: gakumas-supportcards publishes `dist/data/cards.v1.json`, worked by a session in that repository (decision G21). Its pull request #57 (`tia-tools/gakumas-supportcards`) merged into its `develop` as d08f3de. The file goes live only after the sibling's `develop` is released into `main`, which deploys. Milestone 4's Worker needs that; this milestone's tests do not.
@@ -32,8 +32,12 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-29 05:30Z) Milestone 3 merged into `develop` by pull request #9 (merge commit 295b705), closing #8.
 - [x] (2026-10-29 06:31Z) Milestone 4 (issue #10, branch `feature/m4-page`), code: the page in `src/app/`, the Worker in `infra/worker/`, and the toolchain (G29). `bun test` 152 pass after the Codex review's fixes, type-check, lint and `bun run build` clean.
 - [x] (2026-10-29 06:31Z) Milestone 4, acceptance: the DMM sample entered by hand at `http://localhost:5173` (stats and bonuses typed, the six cards picked by name, the three P-items tapped and their digits typed) shows 6971 and S5 short by 73, as Milestone 3 computed. Two bugs found on the way are fixed, with tests.
-- [ ] Milestone 4 merged into `develop` by a pull request that closes #10. The Worker's `wrangler.toml` and deployment wait for Milestone 6 (the subdomain, O3).
-- [ ] Milestone 5: reading the screenshots (prototype first).
+- [x] (2026-10-29 09:08Z) Milestone 4 merged into `develop` by pull request #11 (merge commit c2cd3b2), closing #10. The Worker's `wrangler.toml` and deployment wait for Milestone 6.
+- [x] (2026-10-29 10:04Z) Milestone 5 (issue #12, branch `feature/m5-reader`), the numbers. `src/reader/` reads both tabs of all six samples right: stats, bonuses, スター性, 親愛度 (or hidden), each P-item's fires left (a badge, none, or spent), each tile's Lv and lit × marks, and 相談リフレッシュ. Every value carries a confidence; the lowest on the samples is 0.58. `bun test` 192 pass, type-check and lint clean, every guard seen red (`Artifacts and Notes`).
+- [x] (2026-10-29 11:20Z) Milestone 5, the pictures: every sample tile matched to its own card among all 210, every サポート icon matched or left unknown, and every カスタム item's character and accessory read; a painted メダルもじゃ is recognised (G36, G37).
+- [x] (2026-10-29 11:20Z) Milestone 5, the page (G38): the DMM pair dropped into the page at `http://localhost:5173` fills the whole form with nothing to check, and the result reads 6971, S5 short by 73, as the hand entry did. The scrolled SE3 pair rings 親愛度, which its screenshot hides. `bun test` 225 pass; type-check, lint and `bun run build` clean (93 kB of JavaScript).
+- [x] (2026-10-29 12:02Z) Milestone 5 reviewed by Codex in six rounds, each on a fresh snapshot that it did not write back from: 7, 5, 3, 1 and 1 findings, each fixed with a test that fails against the old code or answered (`Surprises & Discoveries`), then `CODEX VERDICT: LGTM`. On the branch head `bun test` passes 241, type-check, lint and `bun run build` are clean, and the DMM pair still reads 6971 in Chrome.
+- [ ] Milestone 5 merged into `develop` by a pull request that closes #12.
 - [ ] Milestone 6: deploy and CI gates.
 
 
@@ -45,7 +49,7 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - Observation: The in-game support-card tile on the 編成 tab is not the whole card art. It is a crop of it, zoomed by a different amount per card.
   Evidence: Each DMM tile was compared with all 206 local 192 × 108 thumbnails of gakumas-supportcards (`scripts/images/out/w192/`) on a 32 × 18 colour grid. The plain comparison ranked 4 of 6 tiles correctly. A search over zoom 1.0–1.6 and nine offsets ranked all 6 first, but two margins are thin: csprt-3-0062 scored 1243 against 1632 for the runner-up, at the edge of the zoom range, and csprt-2-0007 scored 315 against 660.
 
-- Observation: The marks after "Lv" on a support-card tile count 凸 (limit breaks). There is no filled versus empty distinction.
+- Observation: The marks after "Lv" on a support-card tile count 凸 (limit breaks). This line first said there is no filled versus empty distinction; there is. Every tile has four mark positions, and a mark not yet earned is drawn dark over the art, which the first samples hid. The reader counts the lit ones (decision G35).
   Evidence: In samples 02 and 03, Lv55 tiles show three ×, an SSR at Lv50 shows two ×, and Lv60 tiles and an SR at Lv50 show four ×.
 
 - Observation: On a tall phone the layout is the DMM layout scaled to the image width and shifted down. A blurred band of the idol image fills the extra top space.
@@ -72,6 +76,9 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - Observation: No trigger in the published data carries a `scenario` field today. No support card ability or card-granted P-item in it is limited to one scenario, so open item O6 has no case to handle yet. A card added later could still bring one.
   Evidence: `jq '[.. | objects | select(has("occasion")) | keys[]] | unique'` over the fixture prints `["conditions","filters","occasion"]` (2026-10-29, sibling d08f3de).
 
+- Observation: The DMM memory's 素敵なお仕事 icon is the H.I.F document on a clipboard, `img_general_pitem_3-352`, in the fourth slot. An earlier line here counted that document among the uncounted items and called 3-352 "a clipboard" elsewhere in the row; the two uncounted サポート items are the lamp and a binder. The engine input (`DMM_ITEMS`) was right all along, since both counted items show the fires left 1.
+  Evidence: the icon matcher (`src/reader/items.ts`) over the DMM sample, checked by eye beside the 48 × 48 icons, 2026-10-29.
+
 - Observation: Two of the DMM deck's P-items differ from how this plan first described them. 素敵なお仕事 (もうすぐ本番ですね) fires on any skill-card change while Vi is 400 or more, not only on a 「基本」 change. 完全制覇でポン (なぜこんなところにッ！？) needs Da 700 or more, and each fire also grants one P-drink. A third card item, ふわふわでもこもこ (ふわふわでワクワク), grants two P-drinks on every Dance SP lesson end with no fire limit, so with it the drink count depends on where the lessons go.
   Evidence: the effects at the deck's levels in `src/data/fixtures/cards.v1.json` (2026-10-29).
 
@@ -96,6 +103,58 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
   - A URL key containing `,` or `:` could not round-trip.
   - The fires left of a P-item that only grants P-drinks never reached the panel. Seven cards in the data grant such an item.
   Evidence: the Codex review of 2026-10-29 and commits 0c9765d, 1ac8d12 and ac3bd4b.
+
+- Observation: The カスタム P-item is not one item but one of 180 combinations: a plan, a character, a pouch colour and an accessory, each its own image layer (decision G33). Its effect follows the combination, so its icon has to be read part by part. The 黄 メダルもじゃ also grants 2 P-drinks at the 相談, which the bound does not count yet: the メダルもじゃ flag sets only the deletions.
+  Evidence: `ProduceCustomizeItem.yaml` in `vertesan/gakumasu-diff`, read 2026-10-29. Its 180 entries carry `assetId1` to `assetId5`. The 黄 メダルもじゃ's text reads, in part, 相談選択時、ランダムな特定のPドリンクを2つ獲得.
+
+- Observation: The DMM window does not lay out quite like the phones. Its content sits 7 units to the left, likely the width of its scroll bar, so no position can be taken from the screenshot's edge. On the phones the layout scales exactly with width: the 「カスタム」 label measured 84.3 to 85.0 units wide on all six samples, and the 「SP」 badges 38.2 to 39.0, 74.5 to 75.0 apart.
+  Evidence: the anchors measured on the twelve fixtures, 2026-10-29: the label's left edge at 20.0 units on DMM against 26.8 to 27.8 on the phones; the 「SP」 badge's at 51.0 against 58.0 to 58.6.
+
+- Observation: The iPhone SE 3 基本情報 sample is scrolled. The panel has slid under the idol image, which hides 親愛度 and the stat labels but not the stat digits. The panel's visible top there is 128.6 units above the 「カスタム」 label, against 308 unscrolled.
+  Evidence: `src/reader/fixtures/iphone-se3-01-kihon.png`; `locate` in `src/reader/layout.ts`.
+
+- Observation: A tile's zoom reaches past the 1.6 that the first research tried: the iPhone 15 Pro Max 03 sample's first tile, csprt-3-0042, fits best at 1.8. Once zooms run to 2 and the best few candidates are refined with finer zoom and offset steps, every tile of the six samples matches its own card with a clear lead: the runner-up's difference is at least 8.4 times the winner's. The thin DMM margins of the first research (csprt-3-0062 at 1243 against 1632) came from a coarse offset grid. Matching takes about 0.4 s a screenshot under Bun.
+  Evidence: `src/reader/cards.ts` over the six 編成 samples with the 206 local thumbnails, 2026-10-29. Each tile was also checked by eye beside its matched thumbnail.
+
+- Observation: Reading in the browser first failed whole: four cards in the data have no thumbnail in the sibling's local library, and the dev server answered those `/img/*` paths with the page's own HTML and status 200. One undecodable "image" made `createImageBitmap` throw, which stopped every other image too, and the catch hid the error. Now a missing image answers 404 in the dev server as from the Worker, an image that fails to load or decode is skipped (its card is then never a candidate), and a failed read is logged.
+  Evidence: the Milestone 5 walkthrough in Chrome, 2026-10-29: 「読み取れない画像があります」 with an empty form, then `InvalidStateError: The source image could not be decoded.` from `loadReferences` run by hand in the page.
+
+- Observation: The Codex review of Milestone 5 found seven faults. Six are fixed with tests that fail against the old code, and one is answered with a mitigation:
+  - (High) A 基本情報 read replaced the held items with only those it recognised, so an item the player had entered, whose icon failed to load or lay beyond the edge, was silently lost. It now stays, ringed (G38).
+  - A card or an item with no runner-up to compare read as sure. A card whose own thumbnail failed to load could leave another far ahead and sure. Both are now unsure; a card also needs a fit of 430 or better.
+  - One image that failed to decode stopped the screenshots after it. Each file is now read on its own.
+  - 編成 tiles beyond the image's edge were read from wrong pixels (another row's, through negative indices). They are no longer read.
+  - The colour-box mean read outside the integral image for a box wholly past the right or bottom edge. It now clamps to the edge's pixels.
+  - Taking a ringed item off did not clear its ring. `touchedKeys` now covers removals.
+  - The カスタム tests paint from the committed templates, so they check the pose, the thresholds and the decision, not the templates' fidelity, and nothing ties the templates to their source art. That art is not committed (G37), so no test can regenerate it. The generated file now records the manifest and each layer's hash. Fidelity stays checked only where the samples reach: もじゃ, ロボ, 花 and 羽 are read from real screenshots. The メダル and the other six layers are checked only against themselves, a remaining risk until a sample shows one.
+  Evidence: the Codex review of 2026-10-29, run on a snapshot; it wrote nothing to the repository.
+
+- Observation: A second Codex review, of those fixes, found five more. Four are fixed with tests that fail against the old code:
+  - (High) A visible サポート slot that matched nothing still let the read rule out an item the form held. Such a slot may hold an item no card grants (the DMM row's lamp and binder), or one the matcher missed, so it now rules nothing out. The cost: when the player reads another memory over a filled form, the items the new row does not show stay, ringed, until removed by hand.
+  - The カスタム character had no absolute fit, so noise could read as a sure character. A character now needs a fit of 1600 or better: the samples' characters fit at 1386 or better, the nearest wrong one at 1795 or worse.
+  - Pixel reads past a row's end could take the next row's pixel. Every read outside the glyph boxes now goes through `rgbAt` (`raster.ts`), whose off-image pixel fails every colour test.
+  - A hand edit of `custom-templates.ts` would pass unnoticed. Each layer now stores a checksum of its payload, which a test recomputes. A fault in the generator still cannot be caught without the layer art, which stays uncommitted (G37).
+
+  The fifth is answered, not changed: that a tile is sure with as few as two thumbnails loaded. The guard against a missing true card is the absolute fit of 430. With each tile's own card left out, no other card fit better than 665, and the number of remaining candidates does not change whether a wrong card passes that fit.
+  Evidence: the second Codex review of 2026-10-29, on a fresh snapshot; it wrote nothing to the repository.
+
+- Observation: A third Codex review found three more, all fixed with tests that fail against the old code:
+  - The reader never refused an aspect ratio outside G7's range, though G7 says to. `locate` now refuses a height over width outside 1.75 to 2.25 (the samples measure 1.778 to 2.167), so a cropped or tablet screenshot fills nothing.
+  - An exception while reading, not only while decoding, stopped the files after it. Each file is now read in its own try, and the Lv mask's spread over every pixel is a loop, so a huge image cannot overflow the call stack.
+  - An unread tile kept its level unringed. It now rings both card and level.
+  Evidence: the third Codex review of 2026-10-29, on a fresh snapshot; it wrote nothing to the repository.
+
+- Observation: A fourth Codex review found one more class, now fixed with tests that fail against the old code: values checked only for their shape. A スター性 above 1110 (its cap until 本戦's second round), ワッペン's fires left above 20, and a card item's fires left above its fire limit now keep their digits but are ringed, as an impossible stat, 親愛度 or Lv already was.
+  Evidence: the fourth Codex review of 2026-10-29, on a fresh snapshot; it wrote nothing to the repository.
+
+- Observation: A fifth Codex review found that a digit's confidence had no absolute fit, unlike the cards' and the カスタム character's. A glyph far from every template (damaged or covered) could still lead its runner-up and read as sure. A glyph now needs to be within 0.2 of its nearest template, measured as mean squared cell difference. Every sample digit lies within 0.18 of its own template cut from the other memories, and within 0.105 of the committed one. The bar cannot reject a kana or kanji that resembles a digit: the nearest came within 0.110 to 0.132 of a digit template, depending on the font. The field's format and its range checks catch those instead.
+  Evidence: the fifth Codex review of 2026-10-29, on a fresh snapshot, which wrote nothing to the repository; the distances measured over the twelve samples the same day.
+
+- Observation: Under the Claude Code sandbox, Python's `requests` cannot verify TLS, because the sandbox denies reading every `*.pem` file, certifi's CA bundle included. The one-off layer extraction (G37) therefore ran outside the sandbox. It wrote only to `$TMPDIR`. `Bun.Image`, built into Bun 1.4, decodes webp to PNG, so the tests read the sibling's thumbnails without a new dependency; it returns encoded images only, which `src/test-support/png.ts` then decodes.
+  Evidence: `OSError: Could not find a suitable TLS CA certificate bundle` from `gom.fetch()` in the sandbox; the same call outside it listed manifest 205100:0075 and its 16 layers (2026-10-29).
+
+- Observation: The P-item icons are 90.7 units apart, not 90. The digit badges first suggested 89.7, because their grey merges with icon art. Measured on the icons' frames, the pitch is the same on all six samples.
+  Evidence: the frames' left edges at −1.1, 89.3, 180.8, 271.3, 361.7, 452.7 and 543.1 units on the iPhone 15 Pro Max samples, and 0, 90, 181, 272, 362, 453 and 544 on DMM.
 
 
 ## Decision Log
@@ -253,6 +312,54 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
 - Decision G31: The Worker's routing is a pure function, `route(request, env, fetchUpstream)`, tested with fakes. `/img/*` reuses the sibling's tested `img.ts` unchanged. `/data/cards.json` passes the sibling's file through with an hour's cache. A failure upstream is a 502 marked no-store, so the page falls back to the manual form and recovers as soon as the sibling does. The dev server answers the same two routes from local files (`vite.config.ts`). `wrangler.toml` waits for Milestone 6, since its route needs the subdomain (O3).
   Date/Author: 2026-10-29, agent.
 
+- Decision G32: The sample screenshots are committed as they are, as the reader's test fixtures (open item O2). They are the six pairs the user keeps in `temp/` (DMM, iPhone SE 3, iPhone 15 Pro Max three times, iPhone 16e), about 16 MB, and they show the user's idol, deck and the memory's date.
+  Rationale: Committed, the whole reader runs over real screenshots in every test run, CI included. The user accepted that the 16 MB stays in the history. The digit glyphs the reader matches are cut from these samples and ship with the page in any case.
+  Date/Author: 2026-10-29, user.
+
+- Decision G33: How the reader tells メダルもじゃ (open item O7). The first P-item slot holds the カスタム P-item, which the player builds during 選抜 from layers. The master data table `ProduceCustomizeItem` (in `vertesan/gakumasu-diff`) names each combination and its image layers:
+  - `assetId1`, `img_general_cstm-pitem_0{1,2,3}-1-001`: the base, one per plan;
+  - `assetId2`, the character: `04-2-001` くま, `002` 人形, `003` ロボ, `004` もじゃ, `005` インコ, `006` うさぎ;
+  - `assetId3`, the pouch colour: `04-3-001` 赤, `002` 緑, `003` 黄;
+  - `assetId4`, the accessory, or none: `04-4-001` 花, `002` リボン, `003` メダル, `004` 羽.
+
+  メダルもじゃ is character `04-2-004` with accessory `04-4-003`. Its effect depends on the colour. Only the 黄 one acts at the 相談: it grants 2 random P-drinks and 40 P-points, and halves the price of deleting skill cards there, once per produce. The user's G24 rule (2 deletions at the 相談) describes that one. The 赤 one instead upgrades a chosen card after an おでかけ. The reader recognises the character and the accessory and assumes 黄, so it reads no colour. The templates come from the layer images, extracted with the GkmasObjectManager tool that gakumas-supportcards' image pipeline already uses. This corrects G24's wording: the カスタム item is the first slot, and the P-idol's own item is the second.
+  Rationale: The user identified the purple character in the iPhone 15 Pro Max samples 01 and 03 as もじゃ, and the blue one in 02 as the robot. They pointed at the master data and GkmasObjectManager to check which layer is which. On the colour: "We can assume only yellow was chosen for now."
+  Date/Author: 2026-10-29, user (identification, the 黄 assumption, the source of the templates); agent (the layer table, read from the master data).
+
+- Decision G34: The page will live at `gmks-hif-final-stats.tia.run` (open item O3). That is the repository's name, the way the sibling lives at `gakumas-supportcards.tia.run`.
+  Date/Author: 2026-10-29, user.
+
+- Decision G35: How the reader reads numbers (`src/reader/`, pure functions over a `Raster`, the shape of the browser's `ImageData`).
+  - **Units and anchors:** both tabs are laid out on a 720-wide grid scaled to the screenshot's width, so a unit is `width / 720` pixels. Every position is measured from an anchor found in the image: the green 「カスタム」 label (84.5 units wide) on 基本情報, and the pink 「SP」 badge (38.5 units square, with the blue and yellow ones 75 and 150 below) on 編成. This replaces G7's "fallback to the 「Pアイテム」 heading": both anchors were found on all twelve screenshots.
+  - **Hidden fields:** on 基本情報 the idol image stays put while the panel scrolls under it. The panel's first visible row is where its plain left margin ends, walking up from the label, but never above where the panel starts unscrolled (308 units). A field above it reads as hidden (null), never as a guess.
+  - **Ink:** a pixel is ink only if it is neutral (R, G and B within 60 of each other) and on the text's side of the box's Otsu threshold. When over 45% of the box comes out as ink, the cut fell between two grounds (the page and a bonus's grey pill), and a second cut within that side finds the text.
+  - **Glyphs:** runs of inked columns, each scaled into a 12 × 16 grid with its proportions kept, and compared with templates by mean squared difference. The confidence is how much nearer the best template is than the runner-up, as a share of the runner-up's distance; below 0.35 the form will highlight the value. A short glyph on the baseline at least an eighth of the line in size is a decimal point; smaller marks are dropped.
+  - **Fonts:** five template sets (`fonts.ts`): bold (スター性, stats, 親愛度), bonus (with 「%」), badge (an item's fires left), lv and count (the 残り lines). Each is the mean shape of every glyph the samples show in it, cut by `scripts/glyph-templates.ts` and stored in `glyph-templates.ts`. A font borrows from bold the digits its samples lack: the bold templates alone read all 72 sample Lv glyphs right.
+  - **Item badges:** an item's fires left sit on a filled grey badge; an item with no fire limit has none, and a spent (発動済み) item is greyed whole. The badge shares its grey with the icons' thin outlines, so a pixel counts only if every pixel within 1.5 units is that grey too. A spent item is left out of the form, which counts the same as 0 fires left.
+  - **Tiles:** the level is the white fill of the Lv digits, the connected parts at least half the box tall, so light art behind them stays out. A × mark is lit when half of its middle is pale: lit marks measure at least 0.97 and unlit ones 0.00 on the samples.
+  - **相談リフレッシュ:** the third of three text lines 30 units apart under the effects, or under 除去済みスキルカード when the run deleted cards, so it is found wherever that section pushes it.
+  Rationale: Each rule was measured on all six samples before it was written down, and the numbers are in `Surprises & Discoveries`. Templates from the other memories read every sample glyph (`src/reader/templates.test.ts`), the evidence that they carry over to a memory they were not cut from.
+  Date/Author: 2026-10-29, agent.
+
+- Decision G36: The reader's tests use a snapshot of the sibling's images: all 210 card thumbnails (`w192/`, 1.4 MB) and the 54 icons of items that cards grant (`w48/`, 216 KB), in `src/reader/fixtures/w192/` and `w48/`. They were downloaded from the sibling's site on 2026-10-29, and the 256 that the sibling's local library also holds are byte-identical to it. The page itself still reads them live from `tia-assets` through the Worker (ADR 0001, whose update of the same day records this test-only snapshot). Refresh the snapshot together with the card data's fixture (G22).
+  Rationale: A test of card matching is worth little unless every card the tile could be confused with is a candidate, and CI has no access to the bucket. This follows G22, which snapshots the card file for the same reason. The user chose this over tests that read the sibling's checkout and skip without it.
+  Date/Author: 2026-10-29, user.
+
+- Decision G37: The カスタム item's layer art (G33) is extracted here, once, with the GkmasObjectManager checkout that gakumas-supportcards' image pipeline vendors. Only small templates derived from it are committed, the way the glyph templates are, and the page uses those at runtime. The layer art itself is not in `tia-assets`, since the sibling extracts only items that cards grant.
+  Rationale: The reader needs only to tell the characters and the accessories apart, which small templates do. This avoids work in the sibling's pipeline and a new prefix in the bucket. The user chose it over having the sibling upload the layers to R2.
+  Date/Author: 2026-10-29, user.
+
+- Decision G38: How a read screenshot fills the page (`src/app/fill.ts`, `useScreenshots.ts`).
+  - Each screenshot fills only its own tab's fields. 基本情報 fills the stats, bonuses, スター性, 親愛度, メダルもじゃ, and the held P-items with their fires left: ワッペン from the unlabelled slot, and each matched サポート item. A spent item and an item no card grants are not held. 編成 fills the six cards with their levels and 相談リフレッシュ.
+  - An item the form already holds is dropped only when the read rules it out: its icon was compared with every slot of a whole row, and every サポート slot the row shows matched an item (for ワッペン, the row shows its slot). Otherwise it stays, ringed. An item whose icon did not load, a row cut by the image's edge, or a slot that matched nothing rules nothing out.
+  - A tile reaching beyond the image's edge is not read, and its slot keeps the form's card, ringed. A card is sure only with a runner-up to compare and a fit of 430 or better: on the samples a tile's own card fits at 275 or better, and with its own card left out the best fit was 665 or worse. So a card whose thumbnail failed to load cannot leave another sure in its place. An item icon or a カスタム layer with no runner-up is not sure either, and a stat above 3200, the highest cap, keeps its digits with no confidence.
+  - A value read is filled in. A hidden or unreadable value keeps the form's value (親愛度 stays 37). Either way, when it is not sure (confidence below 0.35, or not read), its field gets an amber ring and no text (G26). The ring goes when the player edits that field, or reads that tab again.
+  - A tile whose Lv cannot be read takes its card's level at the lit 凸. A Lv above what the lit 凸 allows is ringed.
+  - Each slot offers the tile's next two cards as small thumbnails; taking one keeps the level.
+  - The sibling's images are fetched on the first read and kept: all 210 thumbnails and 54 icons, about 1.6 MB, read live through the Worker (ADR 0001). The reading runs on the page's thread. On the DMM pair it filled the form within the eight seconds the walkthrough waited, image downloads included.
+  Rationale: G6 makes the screenshot only a way to fill the form, so a value the reader is not sure of is better shown and ringed than left empty, and a hidden one better kept than guessed.
+  Date/Author: 2026-10-29, agent.
+
 
 ## Outcomes & Retrospective
 
@@ -261,6 +368,16 @@ Milestone 1 (2026-10-29) delivered the arithmetic that needs no card data, in `s
 Milestone 2 (2026-10-29) made the sibling's card data readable here. gakumas-supportcards publishes `/data/cards.v1.json` (its pull request #57 and ADR 0010). `src/data/load.ts` reads the file whole against the copied contract and refuses anything that does not match, naming where. Its fixture is the real file, and the DMM sample's six deck cards are in it. Two things remain outside this milestone. The file is not live until the sibling releases its `develop` into `main`, which Milestone 4's Worker needs. And held cards are only parsed here: what their reasons mean for the bound is Milestone 3's job, guided by the discovery in `Surprises & Discoveries` on what a held card's entry leaves out. One lesson: a plan's guess at another repository's format (a per-card `uncounted` field) was wrong in its field name and its placement. The contract was copied from the merged code, not from the plan.
 
 Milestone 3 (2026-10-29) completed the bound. `bestTotal` scores each of the 324 placements, on both day-3 choices, with the deck's abilities and P-items under 本戦's counts. Those counts are decision G24's play counts and G27's stopgap for 選抜; the panel can change every one (G25). The result is the best placement, its ability lines, the capped stats and every rank's margin. The DMM memory comes to 6971: S5 is out of reach by 73, and S4+ is clear by 2427. The user checked that breakdown line by line and confirmed it, which was this milestone's acceptance. One lesson: two of the hand-worked test expectations were wrong at first, both by forgetting that lowering a capped stat frees what the cap held. The tests caught the arithmetic, and the expectations were corrected by hand, not copied from the code's output.
+
+Milestone 5 (2026-10-29) reads the screenshots. `src/reader/` reads all twelve samples right, from six devices' worth of layouts:
+- every number on both tabs, or hidden where the idol image covers it;
+- every tile's card among all 210;
+- every サポート item or its absence;
+- the カスタム item's character and accessory.
+
+It uses no OCR and no model: anchors, Otsu thresholds, templates cut from the samples, and colour grids compared against the sibling's own images. Dropped into the page, the DMM pair fills the form the hand entry filled and reads 6971. Two lessons:
+- **Survivors:** a mutation that survives is a finding, not only a missing test. Three survivors here showed rules that did nothing on the samples (a badge exclusion, an occlusion skip, a narrow coarse zoom), and two of them were removed rather than tested.
+- **Browser failures:** a browser can fail where every test passes. Here one missing thumbnail took the whole read down, so the image edge now degrades per image.
 
 Milestone 4 (2026-10-29) put the bound on a page. Entered by hand at `http://localhost:5173`, the DMM sample reads 6971 and S5 short by 73, the same as Milestone 3. Each count can be changed in the folded panel, and the URL carries the whole form. The Worker is written and tested but not deployed; that is Milestone 6. One lesson: component tests in happy-dom passed while a real browser showed two plain usability bugs, a focus that never came and a width that never applied. A walkthrough of the real page caught both, and each is now pinned by a test.
 
@@ -279,7 +396,7 @@ Since Milestone 1 it also holds the toolchain and the first engine modules:
 - `oxlint.config.ts`, the lint rules, adopted from the sibling on 2026-10-29;
 - `src/engine/types.ts`, `rating.ts`, `star.ts` and `schedule.ts`, each with a co-located `*.test.ts`. `Interfaces and Dependencies` lists what each exports.
 
-The user keeps sample screenshots in `temp/`, untracked; see open item O2 before committing any of them.
+The user keeps sample screenshots in `temp/`, untracked. Since Milestone 5 they are also committed as the reader's fixtures (decision G32), in `src/reader/fixtures/` as `<device>-<nn>-kihon.png` (the 基本情報 tab) and `<device>-<nn>-hensei.png` (the 編成 tab). The copies keep every pixel byte, but not the capture time that iOS writes into its screenshots (the `eXIf` and `iTXt` chunks).
 
 The sibling project gakumas-supportcards (checkout at `~/Developer/gakumas-supportcards`, GitHub `tia-tools/gakumas-supportcards`, live at `https://gakumas-supportcards.tia.run`) supplies the support card data and art. Its own `CLAUDE.md` describes it; the parts this plan relies on are repeated here.
 
@@ -445,11 +562,12 @@ Milestone 5 reads the screenshots. It starts as a prototype, judged against the 
   - Counts × marks per tile.
   - Matches each support tile against the w192 thumbnails with the zoom-and-offset search of `Surprises & Discoveries`, refined around the best candidates.
   - Matches each P-item icon against G13's candidate set.
+  - Reads the first slot's カスタム item by its character and accessory layers, so メダルもじゃ sets the form's flag (G33).
 - Every read value carries a confidence. A low-confidence value is highlighted in the form, and a support tile shows its top three candidates.
-- Tests run the reader over the samples (per O2) and compare with hand-written expected values.
+- Tests run the reader over the committed samples (G32) and compare with hand-written expected values.
 
 Milestone 6 deploys.
-- `wrangler.toml` for `<O3>.tia.run` under the tia-tools Cloudflare account.
+- `wrangler.toml` for `gmks-hif-final-stats.tia.run` (G34) under the tia-tools Cloudflare account.
 - `.github/workflows/check.yml` and `deploy.yml`, adopted from the sibling with the same pinned actions and a gate comment at the top of each.
 - The GitHub ruleset via the user-level `protect-github.sh` (the repository is public).
 - Acceptance: the live site gives the same verdict for the DMM samples as `bun run dev` does.
@@ -509,7 +627,12 @@ Milestone 3: `bun test src/engine` passes, and `src/engine/total.test.ts` pins t
 
 Milestone 4: `bun run dev`, open `http://localhost:5173`, and enter the DMM sample by hand. The S5 line shows "not reachable" with the shortfall, matching Milestone 3's number. On 2026-10-29 it showed 6971, S5 −73 and S4+ +2427. Under the Claude Code sandbox, run the dev server outside it (see `Surprises & Discoveries`). `bun run build` writes `dist/`, about 45 kB of JavaScript; the card data loads at runtime.
 
-Milestone 5: `bun test src/reader` passes over the samples; in the page, dropping the two DMM screenshots fills the same form as the hand entry.
+Milestone 5: `bun test src/reader` passes over the samples; in the page, dropping the two DMM screenshots fills the same form as the hand entry. On 2026-10-29 the DMM pair filled every field with nothing ringed and read 6971, S5 −73, and its URL was the hand entry's.
+
+The reader's derived data is regenerated, never edited:
+- **Glyph templates,** after a sample is added or the glyph cutting changes: `bun scripts/glyph-templates.ts` rewrites `src/reader/glyph-templates.ts` and prints how well templates from the other memories read each font. `src/reader/templates.test.ts` fails while the committed file is stale.
+- **カスタム layer templates** (G37): extract the 16 layers with the sibling's vendored GkmasObjectManager, then `bun scripts/custom-templates.ts <folder> <manifest version>` (205100:0075 on 2026-10-29). The file records the manifest and each layer PNG's SHA-256, since the art is not committed and no test can regenerate it. The extraction calls `gom.fetch()` and `download(…, convert_image=False)` from `gakumas-supportcards/scripts/images` and decodes each bundle with its `decode_texture`. Match names with `re.escape(name) + r"\.unity3d$"`, since the manifest's search anchors at the start and every name ends in `.unity3d`. Under the Claude Code sandbox it must run outside it (`Surprises & Discoveries`), and its output goes to `$TMPDIR`, never into this repository.
+- **The image snapshot** (G36), with the card data's fixture: for each card's `assetId` and each item's icon `assetId` in `src/data/fixtures/cards.v1.json`, download `https://gakumas-supportcards.tia.run/img/w192/img_general_<assetId>_full.webp` and `/img/w48/<assetId>.webp` into `src/reader/fixtures/w192/` and `w48/`. Pace the requests and retry: a burst drew transient 500s on 2026-10-29.
 
 Milestone 6: push to `main` via a release merge; open the live URL and repeat Milestone 5's check.
 
@@ -608,6 +731,33 @@ Milestone 3's guards, each broken in turn under `bun test src/engine` (2026-10-2
 
 After the Codex review moved the 「未計上」 entries from one per card to one per reason, two shortcuts were put back one at a time, and both went red: 「暫定」 judged by a card's first reason only, and only a card's first entry counted. The second review found two more cases, and both fixes went red when undone: a held card with an empty reason list counted as settled, and a ワッペン without a digit counted 0 fires.
 
+Milestone 5's number reading, each guard broken in turn under `bun test src/reader` (2026-10-29). These went red:
+- the second Otsu cut, the neutral-only ink, the decimal point's minimum size and the confidence;
+- the badge's minimum and spent areas, the 1.5-unit erosion, the 90.7 item pitch and the frame test for an icon;
+- the 親愛度 bounds, a mark lit at no pale share and at an impossible one, the 30-unit line step and the Lv parts' minimum height;
+- the label's width, the blue and yellow badges under 「SP」, the floor on the panel's top and the margin walk;
+- the fallback keeping a font's own templates, and the fallback itself.
+
+Four survived at first, and each was settled:
+- The 親愛度 bounds survived because no sample has a value out of range; `bounded` gained its own test.
+- A lit-mark share of 0.05 survived because lit marks measure at least 0.97 and unlit ones 0.00. The test was rerun with shares of 0 and 1.01, and both went red.
+- The label-width check survived because the test's green bar was too short to be found at all. It is now long enough to be found and the wrong width.
+- Letting the count font borrow from bold changed no sample reading. Borrowing was then adopted, since it lets a count of 5 or more be read at all, and a test pins that the Lv and count templates read the bold digits they lack.
+
+Two more checks covered what no single glyph does. The blue and yellow badges gained a test with a lone pink square, and the fallback gained one for digits a font's own samples lack.
+
+Milestone 5's pictures and page, each guard broken in turn (2026-10-29). These went red:
+- **Card matching:** refined zooms capped at 1.6, no refinement, the overlays compared, only the coarse winner refined. The last failed on all six samples: the coarse order alone is not right, and refining the best eight is what ranks right.
+- **Items:** a loose fit (400) or a tight one (30) taken as a match, transparent cells compared, no カスタム label, a blue label needing 90%.
+- **カスタム:** an accessory fit of 100 or of any size, layers free to drift, any もじゃ taken for メダルもじゃ.
+- **Filling the form:** a spent item held, no 凸 check on the level, no 凸 fallback for it, a hidden 親愛度 guessed, every reading taken as sure.
+- **The page:** stats never ringed, an alternative card resetting the level, no alternatives offered.
+
+Three guards survived, and each was settled:
+- Coarse zooms capped at 1.6 survived, because the refinement walks on to 1.8 from there. The wider coarse range stays as a cheap margin.
+- Leaving out the badge corner when comparing an item icon changed no outcome, so that exclusion was removed.
+- Leaving out of the character comparison the cells the accessory covers changed no outcome, and cost only a little margin (0.57 down to about 0.52), so it was removed too.
+
 
 ## Interfaces and Dependencies
 
@@ -657,7 +807,7 @@ Milestone 3 built these, in `src/engine/` (the Milestone 1 exports above stand, 
     // types.ts
     export interface Memory { params; bonusPermil; star; affection;
       refreshesLeft: number;               // 相談リフレッシュ回数 残り (G24)
-      medalMoja: boolean }                 // the first P-item is メダルもじゃ (G24)
+      medalMoja: boolean }                 // the first P-item is the 黄 メダルもじゃ (G24, G33)
     export interface DeckSlot { cardId: string; level: number }
     export const WAPPEN = "wappen";
     export interface HeldItem { itemId: string; remaining?: number }   // remaining absent: the item's cap if it has one, else no limit
@@ -710,11 +860,37 @@ Milestone 4 built these:
     export async function serveCardData(request: Request, fetchUpstream: (url: string) => Promise<Response>): Promise<Response>;
     export async function serveImage(request: Request, bucket: ImageBucket): Promise<Response>;
 
+Milestone 5 built these, in `src/reader/` (pure) and `src/app/`:
+
+    // raster.ts: the shape of the browser's ImageData
+    export interface Raster { width: number; height: number; data: Uint8ClampedArray }
+    // layout.ts: the tab and its anchor, in units of width / 720
+    export function locate(r: Raster): Frame | null;   // Frame { tab: "kihon" | "hensei"; unit; x; y; top }
+    export function shows(frame: Frame, rect: Rect, r: Raster): boolean;
+    // read.ts
+    export interface References { thumbs: ReadonlyMap<string, Integral>; icons: ReadonlyMap<string, IconTemplate> }
+    export function readScreenshot(r: Raster, refs?: References | null): KihonRead | HenseiRead | null;
+    export const UNSURE = 0.35;
+    // KihonRead { star; params; bonusPermil; affection; slots: Slot[]; custom: CustomRead | null }, each value Read<T> = { value; confidence } or null
+    // HenseiRead { tiles: { cards: Candidate[]; cardConfidence; level; marks }[]; refreshes }
+    // cards.ts, items.ts, custom.ts
+    export function integral(r: Raster): Integral;
+    export function rankCards(screen: Integral, frame: Frame, k: number, thumbs: ReadonlyMap<string, Integral>): Candidate[];
+    export function iconTemplate(icon: Raster, cells?: number, stride?: number): IconTemplate;
+    export function matchItem(screen: Integral, frame: Frame, k: number, icons: ReadonlyMap<string, IconTemplate>): { id: string; confidence: number } | null;
+    export function readCustom(screen: Integral, frame: Frame): CustomRead | null;   export function isMedalMoja(read: CustomRead): boolean;
+    // src/app/fill.ts
+    export function fromKihon(form: FormState, read: KihonRead, itemIds: ReadonlyMap<string, string>): Filled;   // Filled { patch; unsure: string[]; alternatives? }
+    export function fromHensei(form: FormState, read: HenseiRead, cards: ReadonlyMap<string, Card>, limits: LevelLimits | null): Filled;
+    export function touchedKeys(form: FormState, patch: Partial<FormState>): string[];
+    // src/app/screenshots.ts (browser only)
+    export function rasterOf(image: Blob): Promise<Raster>;   export function loadReferences(data: CardDataFile): Promise<References>;
+
 Open items, carried until answered:
 - O1: answered for 本戦 on 2026-10-29 (decision G24). 選抜 counts are still open; decision G27's stopgap stands in for them.
-- O7: reading メダルもじゃ, a P-idol item, in the first P-item slot (decision G24). The sibling's 48 × 48 icons cover only items that support cards grant, so Milestone 5 needs its own template for it.
-- O2: whether the samples may be committed as fixtures (they show the user's deck and idol, nothing else personal), or must be cropped or kept local.
-- O3: the subdomain.
+- O7: answered on 2026-10-29 (decision G33). メダルもじゃ is a combination of the first slot's カスタム item, read by its layers, and assumed 黄.
+- O2: answered on 2026-10-29 (decision G32). The samples are committed as they are.
+- O3: answered on 2026-10-29 (decision G34). The subdomain is `gmks-hif-final-stats`.
 - O4: whether the game floors, rounds or ceils base × (1 + bonus). Settle it with one in-game lesson result before trusting margins of a point or two.
 - O5: the 親愛度 level in force at each 本戦 スター性 gain below Lv37. Until it is answered, decision G16's upper-bound reading applies.
 - O6: whether any trigger names a scenario token that separates 選抜 (produce-007) from 本戦 (produce-008). The sibling's `count.ts` treats a trigger of another scenario as 0. As of 2026-10-29, no trigger in the published data carries `scenario` (`Surprises & Discoveries`).
@@ -754,3 +930,7 @@ Revision note (2026-10-29, Milestone 4 started): Milestone 3 merged (#9). Decisi
 Revision note (2026-10-29, Milestone 4 built): the page and the Worker are built. Added decisions G30 (layout and URL state) and G31 (the Worker's shape), two discoveries (the sandbox and the dev server, and the walkthrough's bugs), the outcome, the as-built list and the exports. The page was accepted by entering the DMM sample by hand.
 
 Revision note (2026-10-29, Codex review of Milestone 4): G30 now refuses an unknown card or a deck without card data, as G28 says, rather than leaving it out. A discovery records the review's four fixes. Interfaces gain `AbilityLine.left`, `DrinkLine`, `BestResult.drinks` and `Computed`.
+
+Revision note (2026-10-29, Milestone 5 started): Milestone 4 merged (#11), and Milestone 5 is issue #12. The user answered O2, O7 and O3: decisions G32 (the samples are committed), G33 (メダルもじゃ read by its layers, assumed 黄, which also corrects G24's wording on the first slot) and G34 (the subdomain). A discovery records the カスタム item's layers and the 2 P-drinks the bound does not count yet.
+
+Revision note (2026-10-29, Milestone 5 built): the reader and its page are built. Added decisions G36 (the image snapshot), G37 (the カスタム layers as derived templates) and G38 (how a screenshot fills the page), four discoveries (the zoom range, the browser failure, the sandbox and TLS, the DMM item identities), the regeneration steps, the mutation records, the exports and the outcome.

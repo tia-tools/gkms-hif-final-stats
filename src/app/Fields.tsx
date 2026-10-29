@@ -40,6 +40,11 @@ export function PercentField({ value, onChange, label, class: extra = "" }: Fiel
   );
 }
 
+/** The mark on a field the screenshot reader asks the player to check. */
+export function mark(on: boolean): string {
+  return on ? "ring-2 ring-amber-400" : "";
+}
+
 export function Chip({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
   const look = on ? "border-slate-700 bg-slate-700 text-white" : "border-slate-300 bg-white text-slate-600";
   return (
