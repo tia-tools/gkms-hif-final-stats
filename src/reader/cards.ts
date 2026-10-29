@@ -46,6 +46,9 @@ const WALK = [
 /** How many of the coarse search's best the refinement re-scores. */
 const REFINED = 8;
 
+/** A tile's or a fit's colours: one cell after another, R, G and B each. */
+export type Signature = Float32Array;
+
 /** Sums of R, G and B over every rectangle from the origin, for box averages in constant time. */
 export interface Integral {
   w: number;
@@ -68,12 +71,12 @@ export function integral(r: Raster): Integral {
   return { w, h: r.height + 1, sums };
 }
 
-/** The mean colour over [x0, x1) × [y0, y1), clamped to the image, into out[at..at+2]. */
-function boxMean(t: Integral, x0: number, y0: number, x1: number, y1: number, out: Float32Array, at: number): void {
-  const cx0 = Math.max(0, Math.min(t.w - 1, Math.round(x0)));
-  const cx1 = Math.max(cx0 + 1, Math.min(t.w - 1, Math.round(x1)));
-  const cy0 = Math.max(0, Math.min(t.h - 1, Math.round(y0)));
-  const cy1 = Math.max(cy0 + 1, Math.min(t.h - 1, Math.round(y1)));
+/** The mean colour over the rectangle [x0, x1) × [y0, y1), clamped to the image, into out[at..at+2]. */
+function boxMean(t: Integral, rect: { x0: number; y0: number; x1: number; y1: number }, out: Float32Array, at: number): void {
+  const cx0 = Math.max(0, Math.min(t.w - 1, Math.round(rect.x0)));
+  const cx1 = Math.max(cx0 + 1, Math.min(t.w - 1, Math.round(rect.x1)));
+  const cy0 = Math.max(0, Math.min(t.h - 1, Math.round(rect.y0)));
+  const cy1 = Math.max(cy0 + 1, Math.min(t.h - 1, Math.round(rect.y1)));
   const n = (cx1 - cx0) * (cy1 - cy0);
   for (let c = 0; c < 3; c++) {
     const s = (t.sums[(cy1 * t.w + cx1) * 3 + c] ?? 0) - (t.sums[(cy0 * t.w + cx1) * 3 + c] ?? 0) - (t.sums[(cy1 * t.w + cx0) * 3 + c] ?? 0) + (t.sums[(cy0 * t.w + cx0) * 3 + c] ?? 0);
@@ -90,7 +93,7 @@ function signatureOf(t: Integral, grid: Grid, x0: number, y0: number, sx: number
     for (let i = 0; i < grid.cols; i++) {
       const u = REGION.x + i * cw;
       const v = REGION.y + j * ch;
-      boxMean(t, x0 + u * sx, y0 + v * sy, x0 + (u + cw) * sx, y0 + (v + ch) * sy, out, (j * grid.cols + i) * 3);
+      boxMean(t, { x0: x0 + u * sx, y0: y0 + v * sy, x1: x0 + (u + cw) * sx, y1: y0 + (v + ch) * sy }, out, (j * grid.cols + i) * 3);
     }
   }
   return out;
@@ -140,6 +143,9 @@ const clampPose = (p: Pose): Pose => ({
   fy: Math.min(1, Math.max(-1, p.fy)),
 });
 
+/** The 27 moves of one step: each of zoom and the two offsets down, kept or up. */
+const MOVES = [-1, 0, 1].flatMap((dz) => [-1, 0, 1].flatMap((dx) => [-1, 0, 1].map((dy) => ({ dz, dx, dy }))));
+
 /** From a pose, steps to whichever neighbouring pose fits better, until none does, at each step size. */
 function refine(tileSig: Signature, thumb: Integral, start: Pose): Fit {
   let best: Fit = { pose: start, score: score(tileSig, thumb, FINE, start) };
@@ -147,14 +153,10 @@ function refine(tileSig: Signature, thumb: Integral, start: Pose): Fit {
     for (let moved = true; moved; ) {
       moved = false;
       const { z, fx, fy } = best.pose;
-      for (const dz of [-1, 0, 1]) {
-        for (const dx of [-1, 0, 1]) {
-          for (const dy of [-1, 0, 1]) {
-            const pose = clampPose({ z: z + dz * step.z, fx: fx + dx * step.f, fy: fy + dy * step.f });
-            const s = score(tileSig, thumb, FINE, pose);
-            if (s < best.score) [best, moved] = [{ pose, score: s }, true];
-          }
-        }
+      for (const { dz, dx, dy } of MOVES) {
+        const pose = clampPose({ z: z + dz * step.z, fx: fx + dx * step.f, fy: fy + dy * step.f });
+        const s = score(tileSig, thumb, FINE, pose);
+        if (s < best.score) [best, moved] = [{ pose, score: s }, true];
       }
     }
   }
