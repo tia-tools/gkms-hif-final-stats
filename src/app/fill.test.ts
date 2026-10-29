@@ -146,7 +146,7 @@ describe("fromHensei", () => {
     const tiles = six((i) => (i === 0 ? tile("x", { cards: [] }) : tile("s_card-3-0099")));
     const { patch, unsure: check } = fromHensei(form, hensei(tiles), CARDS, CARD_DATA.levelLimits);
     expect(patch.deck?.[0]).toEqual({ cardId: "s_card-3-0062", level: 60 });
-    expect(check).toEqual(["deck.0"]);
+    expect(check).toEqual(["deck.0", "level.0"]);
   });
 });
 

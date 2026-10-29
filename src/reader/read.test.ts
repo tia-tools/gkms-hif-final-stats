@@ -56,10 +56,12 @@ describe("readScreenshot over the samples", () => {
   });
 
   test("a tile beyond the image's edge is not read, and the others still are", async () => {
-    // The DMM 編成 sample without its top 200 rows: the first row of tiles is cut.
+    // The DMM 編成 sample moved up 200 rows, its foot padded with the page's grey: still 720 × 1280,
+    // but the first row of tiles now starts above the image.
     const full = await loadFixture("dmm-01-hensei");
-    const cut = { width: full.width, height: full.height - 200, data: full.data.slice(200 * full.width * 4) };
-    const read = readScreenshot(cut, refs);
+    const data = new Uint8ClampedArray(full.data.length).fill(250);
+    data.set(full.data.subarray(200 * full.width * 4));
+    const read = readScreenshot({ ...full, data }, refs);
     if (read?.tab !== "hensei") throw new Error("not read as 編成");
     expect(read.tiles.map((t) => t.cards[0]?.id ?? null)).toEqual([null, null, ...HENSEI["dmm-01"].cards.slice(2)]);
     expect(read.tiles.map((t) => value(t.level))).toEqual([null, null, 50, 60, 60, 60]);
@@ -85,14 +87,10 @@ describe("readScreenshot over the samples", () => {
     expect(read?.tab === "kihon" ? read.params.vocal : null).toEqual({ value: 9982, confidence: 0 });
   });
 
-  test("cut just below the 「Pアイテム」 row, the row still reads in full", async () => {
-    // The DMM 基本情報 sample ends 2 px below the icons' frames (at y 821), so the reads run up to the image's foot.
+  test("a shape outside 9:16 to 9:20 is refused, anchor or not (G7)", async () => {
+    // The DMM 基本情報 sample cut to 720 × 960, 4:3, with its 「カスタム」 label still in it.
     const full = await loadFixture("dmm-01-kihon");
-    const height = 821;
-    const read = readScreenshot({ width: full.width, height, data: full.data.slice(0, full.width * height * 4) }, refs);
-    if (read?.tab !== "kihon") throw new Error("not read as 基本情報");
-    expect(read.slots.map(slotDigit)).toEqual(KIHON["dmm-01"].slots);
-    expect(read.slots.map((s) => s.item?.value ?? null)).toEqual(KIHON["dmm-01"].icons);
+    expect(readScreenshot({ width: full.width, height: 960, data: full.data.slice(0, full.width * 960 * 4) }, refs)).toBeNull();
   });
 
   test("an image that is neither tab reads as null", () => {

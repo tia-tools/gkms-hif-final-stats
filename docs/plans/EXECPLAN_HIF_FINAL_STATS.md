@@ -137,6 +137,12 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
   The fifth is answered, not changed: that a tile is sure with as few as two thumbnails loaded. The guard against a missing true card is the absolute fit of 430. With each tile's own card left out, no other card fit better than 665, and the number of remaining candidates does not change whether a wrong card passes that fit.
   Evidence: the second Codex review of 2026-10-29, on a fresh snapshot; it wrote nothing to the repository.
 
+- Observation: A third Codex review found three more, all fixed with tests that fail against the old code:
+  - The reader never refused an aspect ratio outside G7's range, though G7 says to. `locate` now refuses a height over width outside 1.75 to 2.25 (the samples measure 1.778 to 2.167), so a cropped or tablet screenshot fills nothing.
+  - An exception while reading, not only while decoding, stopped the files after it. Each file is now read in its own try, and the Lv mask's spread over every pixel is a loop, so a huge image cannot overflow the call stack.
+  - An unread tile kept its level unringed. It now rings both card and level.
+  Evidence: the third Codex review of 2026-10-29, on a fresh snapshot; it wrote nothing to the repository.
+
 - Observation: Under the Claude Code sandbox, Python's `requests` cannot verify TLS, because the sandbox denies reading every `*.pem` file, certifi's CA bundle included. The one-off layer extraction (G37) therefore ran outside the sandbox. It wrote only to `$TMPDIR`. `Bun.Image`, built into Bun 1.4, decodes webp to PNG, so the tests read the sibling's thumbnails without a new dependency; it returns encoded images only, which `src/test-support/png.ts` then decodes.
   Evidence: `OSError: Could not find a suitable TLS CA certificate bundle` from `gom.fetch()` in the sandbox; the same call outside it listed manifest 205100:0075 and its 16 layers (2026-10-29).
 

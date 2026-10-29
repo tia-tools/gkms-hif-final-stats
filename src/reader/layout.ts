@@ -122,8 +122,19 @@ function panelTop(r: Raster, pillX: number, pillY: number, unit: number): number
   return floor;
 }
 
-/** Which tab the screenshot shows and where its anchor is, or null when it is neither. */
+/**
+ * Height over width of the layouts that scale with the width (decision G7): portrait phones and
+ * DMM, from 9:16 to about 9:20. The samples measure 1.778 to 2.167.
+ */
+export const ASPECT = { min: 1.75, max: 2.25 };
+
+/**
+ * Which tab the screenshot shows and where its anchor is, or null when it is neither, or when its
+ * shape is one the reader does not support (G7): refused, never misread.
+ */
 export function locate(r: Raster): Frame | null {
+  const aspect = r.height / r.width;
+  if (!(aspect >= ASPECT.min && aspect <= ASPECT.max)) return null;
   const unit = r.width / 720;
   return locateKihon(r, unit) ?? locateHensei(r, unit);
 }

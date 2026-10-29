@@ -101,7 +101,7 @@ export function fromHensei(form: FormState, read: HenseiRead, cards: ReadonlyMap
   const deck: (DeckSlot | null)[] = read.tiles.map((tile, i) => {
     const best = tile.cards[0];
     if (best === undefined) {
-      unsure.push(`deck.${i}`);
+      unsure.push(`deck.${i}`, `level.${i}`);
       return form.deck[i] ?? null;
     }
     const limit = limitOf(cards.get(best.id), tile.marks, limits);

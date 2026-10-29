@@ -52,7 +52,13 @@ export function useScreenshots(form: FormState, update: (patch: Partial<FormStat
     const itemIds = new Map([...itemIdsOf(data)].filter(([assetId]) => references.icons.has(assetId)));
     let unread = false;
     for (const file of files) {
-      const r = await rasterOf(file).then((raster) => readScreenshot(raster, references), () => null);
+      // Any failure, decoding or reading, leaves this file unread and goes on to the next.
+      const r = await rasterOf(file)
+        .then((raster) => readScreenshot(raster, references))
+        .catch((error: unknown) => {
+          console.error("reading a screenshot failed", error);
+          return null;
+        });
       if (r === null) unread = true;
       else if (r.tab === "kihon") fill(fromKihon(latest.current, r, itemIds), "kihon");
       else fill(fromHensei(latest.current, r, cards, data.levelLimits), "hensei");

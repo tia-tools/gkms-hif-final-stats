@@ -69,8 +69,14 @@ export function lvMask(r: Raster, frame: Frame, k: number): Mask {
   }
   const ink = new Uint8Array(all.length);
   for (const part of components({ w: box.w, h: box.h, ink: all })) {
-    const rows = part.map((i) => Math.floor(i / box.w));
-    if (Math.max(...rows) - Math.min(...rows) + 1 < 0.5 * box.h) continue;
+    let top = box.h;
+    let bottom = -1;
+    for (const i of part) {
+      const y = Math.floor(i / box.w);
+      top = Math.min(top, y);
+      bottom = Math.max(bottom, y);
+    }
+    if (bottom - top + 1 < 0.5 * box.h) continue;
     for (const i of part) ink[i] = 1;
   }
   return { w: box.w, h: box.h, ink };
