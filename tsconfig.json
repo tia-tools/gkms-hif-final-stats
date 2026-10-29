@@ -14,7 +14,9 @@
     "verbatimModuleSyntax": true,
     "allowImportingTsExtensions": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
   },
-  "include": ["src/**/*", "infra/**/*"]
+  "include": ["src/**/*", "infra/**/*", "vite.config.ts"]
 }
