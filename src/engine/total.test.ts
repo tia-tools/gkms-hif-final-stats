@@ -25,6 +25,10 @@ describe("bestTotal, the DMM sample (worked by hand in the plan's Artifacts and 
     expect(rank(result, "S4+")).toEqual({ rank: "S4+", rating: 30000, required: 4544, margin: 2427, provisional: false });
   });
 
+  test("reports 完全制覇でポン's one fire as one P-drink", () => {
+    expect(result.drinks.map((d) => [d.itemName, d.left, d.fires, d.drinks])).toEqual([["完全制覇でポン", 1, 1, 1]]);
+  });
+
   test("counts 4 cards, 2 changes, 12 P-drinks acquired and 8 bought", () => {
     const o = result.counts.occasions;
     expect([o["GetProduceCard"], o["ChangeProduceCard"], o["GetProduceDrink"], o["BuyShopItemProduceDrink"]]).toEqual([4, 2, 12, 8]);
@@ -85,6 +89,11 @@ describe("bestTotal, the panel (decision G25)", () => {
     expect(run([{ itemId: WAPPEN }]).counts.occasions["GetProduceCard"]).toBe(20);
     expect(run([]).counts.occasions["GetProduceCard"]).toBe(1);
     expect(run([]).finalStar).toBe(1275); // 810 + 45 + 15 + 180, then + 225
+  });
+
+  test("ワッペン typed above its 20 fires counts 20, rather than stopping the computation", () => {
+    const result = bestTotal(DMM_MEMORY, DMM_DECK, [{ itemId: WAPPEN, remaining: 25 }], CARD_DATA, { occasions: { GetProduceCard: 99 } }, 3200);
+    expect(result.finalStar).toBe(1335);
   });
 
   test("a lower parameter cap moves a lesson off the capped stat", () => {

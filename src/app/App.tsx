@@ -42,13 +42,14 @@ export function App() {
   const data = cardData.status === "ready" ? cardData.data : null;
   const cards = useMemo(() => (data === null ? null : new Map(data.cards.map((c) => [c.id, c]))), [data]);
   const names = useMemo(() => new Map([...(cards?.values() ?? [])].map((c) => [c.id, c.name])), [cards]);
-  const { result, unknownCards } = useMemo(() => compute(form, data, capOf(capLevel)), [form, data, capLevel]);
+  const { result, problem } = useMemo(() => compute(form, data, capOf(capLevel)), [form, data, capLevel]);
   const choices = useMemo(() => itemChoices(form.deck.map((s) => (s === null ? undefined : cards?.get(s.cardId)))), [form.deck, cards]);
   return (
     <div class="mx-auto flex max-w-5xl flex-col gap-3 p-3 sm:p-6">
       <h1 class="text-lg font-bold">H.I.F. 本戦ランク判定</h1>
       {cardData.status === "failed" && <p class="text-sm text-rose-600">カードデータを読み込めませんでした</p>}
-      {unknownCards.length > 0 && <p class="text-sm text-rose-600">不明なカード {unknownCards.join(" ")}</p>}
+      {problem !== null && "unknownCards" in problem && <p class="text-sm text-rose-600">不明なカード {problem.unknownCards.join(" ")}</p>}
+      {problem !== null && "error" in problem && <p class="text-sm text-rose-600">計算できません: {problem.error}</p>}
       <div class="grid gap-3 md:grid-cols-2">
         <div class="flex flex-col gap-3">
           <MemoryForm form={form} update={update} capLevel={capLevel} onCapLevel={setCapLevel} />

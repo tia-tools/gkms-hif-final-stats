@@ -25,16 +25,21 @@ describe("compute", () => {
     expect(compute({ ...DMM_FORM, star: null }, CARD_DATA, 3200).result).toBeNull();
   });
 
-  test("leaves out and reports a card the data lacks, never stopping on it", () => {
+  test("refuses a deck card the data lacks, naming it, rather than computing without it", () => {
     const deck = [...DMM_DECK.slice(0, 5), { cardId: "s_card-9-9999", level: 60 }];
-    const { result, unknownCards } = compute({ ...DMM_FORM, deck }, CARD_DATA, 3200);
-    expect(unknownCards).toEqual(["s_card-9-9999"]);
-    expect(result?.lines.some((l) => l.cardId === "s_card-3-0069")).toBe(false);
+    expect(compute({ ...DMM_FORM, deck }, CARD_DATA, 3200)).toEqual({ result: null, problem: { unknownCards: ["s_card-9-9999"] } });
   });
 
-  test("without card data, computes the memory alone and reports nothing missing", () => {
-    const { result, unknownCards } = compute(DMM_FORM, null, 3200);
-    expect([result?.lines, unknownCards]).toEqual([[], []]);
+  test("refuses a deck while there is no card data, and computes the memory alone with an empty deck", () => {
+    expect(compute(DMM_FORM, null, 3200)).toEqual({ result: null, problem: { noCardData: true } });
+    const alone = compute({ ...DMM_FORM, deck: emptyForm().deck }, null, 3200);
+    expect([alone.result?.total, alone.result?.lines]).toEqual([6410, []]);
+  });
+
+  test("shows an engine error instead of stopping the page", () => {
+    const { result, problem } = compute({ ...DMM_FORM, affection: 99 }, CARD_DATA, 3200);
+    expect(result).toBeNull();
+    expect(problem).toMatchObject({ error: expect.stringContaining("親愛度") });
   });
 });
 
@@ -52,6 +57,18 @@ describe("panelRows", () => {
       ["filters", "SSR", 4, 1],
     ]);
     expect(rows.find((r) => r.key === "GetProduceDrink")?.value).toBe(12);
+  });
+
+  test("lists a drink-only P-item's fires left under its occasion, where an ability line would not", () => {
+    // 基礎＞応用 (SR) grants うるおいのどケア: one P-drink per SP lesson end, 2 fires per run, no stat effect
+    const deck = [...DMM_DECK.slice(0, 5), { cardId: "s_card-2-0040", level: 50 }];
+    const form = { ...DMM_FORM, deck, items: { ...DMM_FORM.items, "pitem_00-2-082-0": 1 } };
+    const withItem = compute(form, CARD_DATA, 3200).result;
+    if (withItem === null) throw new Error("the form did not compute");
+    const rows = panelRows(withItem, {}, NAMES);
+    const at = rows.findIndex((r) => r.label === "基礎＞応用「うるおいのどケア」");
+    expect(rows[at]).toMatchObject({ kind: "left", key: "s_card-2-0040/pitem_00-2-082-0", value: 1 });
+    expect(rows.slice(0, at).findLast((r) => r.depth === 0)?.key).toBe("EndLesson");
   });
 
   test("marks a count the player changed", () => {
