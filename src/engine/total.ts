@@ -10,7 +10,7 @@ import type { Counts } from "./count.ts";
 import { type Day3, honsenCounts } from "./honsen-profile.ts";
 import { RANKS, requiredTotal } from "./rating.ts";
 import { PLACEMENTS, type Placement, capped, scheduleGains } from "./schedule.ts";
-import { bestFinalStar } from "./star.ts";
+import { WAPPEN_FIRES_PER_RUN, bestFinalStar } from "./star.ts";
 import { type DeckSlot, type HeldItem, type Memory, type RankLine, type Stat, WAPPEN, sumStats } from "./types.ts";
 
 /** What the player changed in the panel (decisions G3, G4, G12, G25); each replaces a derived default. */
@@ -109,9 +109,11 @@ export function bestTotal(
   cap: number,
 ): BestResult {
   const { abilities, drinks } = deckSources(deck, new Map(data.cards.map((c) => [c.id, c])), items, panel.left ?? {});
-  const wappenLeft = items.find((item) => item.itemId === WAPPEN)?.remaining ?? 0;
+  const wappen = items.find((item) => item.itemId === WAPPEN);
+  const wappenLeft = wappen === undefined ? 0 : (wappen.remaining ?? WAPPEN_FIRES_PER_RUN);
   const held = data.held.filter((h) => deck.some((slot) => slot.cardId === h.id));
-  const reasons = held.flatMap((h) => h.reasons.map((_, i) => uncountedKey(h.id, i)));
+  // A held card always leaves something to decide: one entry even if its reason list is empty.
+  const reasons = held.flatMap((h) => Array.from({ length: Math.max(1, h.reasons.length) }, (_, i) => uncountedKey(h.id, i)));
   const manual = reasons.flatMap((key) => panel.uncounted?.[key] ?? []);
   const ctx: Context = { memory, abilities, drinks, needs: needs([...abilities, ...drinks], wappenLeft), manual, panel, cap };
   const days: readonly Day3[] = panel.day3 === undefined ? ["present", "activity"] : [panel.day3];

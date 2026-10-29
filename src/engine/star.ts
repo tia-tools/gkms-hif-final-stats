@@ -6,7 +6,7 @@ const LOWEST_AFFECTION = 28;
 const STAR_CAP_BEFORE_ROUND_2 = 1110;
 
 /** H.I.Fワッペン fires at most 20 times per run. */
-const WAPPEN_FIRES_PER_RUN = 20;
+export const WAPPEN_FIRES_PER_RUN = 20;
 
 /** SP lesson gains (day 2 and day 5), one ワッペン fire, and each round's highest gain. */
 const LESSON_GAINS: readonly number[] = [30, 10];

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { CARD_DATA, DMM_DECK, DMM_ITEMS, DMM_MEMORY } from "../test-support/dmm.ts";
+import { type HeldItem, WAPPEN } from "./types.ts";
 import { bestTotal, uncountedKey } from "./total.ts";
 
 const dmm = (panel = {}, cap = 3200, data = CARD_DATA) => bestTotal(DMM_MEMORY, DMM_DECK, DMM_ITEMS, data, panel, cap);
@@ -79,6 +80,13 @@ describe("bestTotal, the panel (decision G25)", () => {
     expect(raised.total).toBe(6971); // Da was already at the cap
   });
 
+  test("ワッペン without a digit read counts its 20 fires; one not held counts none", () => {
+    const run = (items: readonly HeldItem[]) => bestTotal(DMM_MEMORY, DMM_DECK, items, CARD_DATA, {}, 3200);
+    expect(run([{ itemId: WAPPEN }]).counts.occasions["GetProduceCard"]).toBe(20);
+    expect(run([]).counts.occasions["GetProduceCard"]).toBe(1);
+    expect(run([]).finalStar).toBe(1275); // 810 + 45 + 15 + 180, then + 225
+  });
+
   test("a lower parameter cap moves a lesson off the capped stat", () => {
     // worked by hand: day 2 on Vo with its サブ on Da, day 5 on Da; both on Da would waste 208
     const result = dmm({}, 3000);
@@ -108,6 +116,12 @@ describe("bestTotal, a held deck card (decision G12)", () => {
     const result = dmm({ uncounted: { [first]: { stat: "dance", points: 50 }, [second]: { stat: "visual", points: 100 } } }, 3200, held);
     expect(result.total).toBe(6971 + 100); // Da is at the cap, so its 50 add nothing
     expect(rank(result, "S5")).toMatchObject({ margin: 27, provisional: false });
+  });
+
+  test("a held card with no reasons listed still has one entry to fill", () => {
+    const silent = { ...CARD_DATA, held: [{ id: "s_card-3-0066", name: "放っておけない気になる子", reasons: [] }] };
+    expect(rank(dmm({}, 3200, silent), "S5")?.provisional).toBe(true);
+    expect(rank(dmm({ uncounted: { [first]: { stat: "vocal", points: 0 } } }, 3200, silent), "S5")?.provisional).toBe(false);
   });
 
   test("a value of 0 also ends the provisional mark", () => {
