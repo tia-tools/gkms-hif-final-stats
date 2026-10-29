@@ -46,6 +46,18 @@ describe("readForm and writeForm", () => {
     expect(roundTrip({ ...emptyForm(), panel }).panel).toEqual(panel);
   });
 
+  test("keeps keys holding the list's own separators, and a literal %", () => {
+    const panel = {
+      occasions: {},
+      filters: { "a,b:c.d": 1, "100%": 2 },
+      conditions: {},
+      left: { "x:y,z": 3 },
+      uncounted: { "card:1#0": { stat: "dance" as const, points: 4 } },
+    };
+    const form = { ...emptyForm(), deck: [{ cardId: "odd:id,1", level: 40 }, null, null, null, null, null], items: { "it,em:1": 2 }, panel };
+    expect(roundTrip(form)).toMatchObject({ deck: form.deck, items: form.items, panel });
+  });
+
   test("keeps 親愛度, refreshes and メダルもじゃ when they differ from the defaults", () => {
     const form = { ...emptyForm(), affection: 30, refreshesLeft: 0, medalMoja: true };
     expect(roundTrip(form)).toMatchObject({ affection: 30, refreshesLeft: 0, medalMoja: true });

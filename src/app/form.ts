@@ -58,12 +58,21 @@ function wholeNumber(text: string | undefined): number | null {
   return text !== undefined && /^\d{1,7}$/.test(text) ? Number(text) : null;
 }
 
-/** `key:value,key:value`, keys holding neither `,` nor `:`. */
+/** A key inside a `key:value,…` list, with the three characters the list uses escaped. */
+export function escapeKey(key: string): string {
+  return key.replace(/%/g, "%25").replace(/,/g, "%2C").replace(/:/g, "%3A");
+}
+
+export function unescapeKey(key: string): string {
+  return key.replace(/%2C/g, ",").replace(/%3A/g, ":").replace(/%25/g, "%");
+}
+
+/** `key:value,key:value`, keys escaped by `escapeKey`. */
 function pairs(text: string | null): [string, string | undefined][] {
   if (text === null || text === "") return [];
   return text.split(",").map((entry) => {
     const at = entry.lastIndexOf(":");
-    return at === -1 ? [entry, undefined] : [entry.slice(0, at), entry.slice(at + 1)];
+    return at === -1 ? [unescapeKey(entry), undefined] : [unescapeKey(entry.slice(0, at)), entry.slice(at + 1)];
   });
 }
 
@@ -104,7 +113,7 @@ function uncountedOf(text: string | null): Record<string, { stat: Stat; points: 
     const [key, stat, points] = entry.split(":");
     const found = STAT_SET.find((s) => s === stat);
     const n = wholeNumber(points);
-    if (key !== undefined && key !== "" && found !== undefined && n !== null) out[key] = { stat: found, points: n };
+    if (key !== undefined && key !== "" && found !== undefined && n !== null) out[unescapeKey(key)] = { stat: found, points: n };
   }
   return out;
 }
@@ -138,7 +147,7 @@ export function readForm(q: URLSearchParams): FormState {
 }
 
 function join(entries: [string, string | number | null][]): string {
-  return entries.map(([key, value]) => (value === null ? key : `${key}:${value}`)).join(",");
+  return entries.map(([key, value]) => (value === null ? escapeKey(key) : `${escapeKey(key)}:${value}`)).join(",");
 }
 
 function setIf(q: URLSearchParams, name: string, value: string): void {
@@ -154,7 +163,7 @@ export function writeForm(form: FormState): URLSearchParams {
   if (form.affection !== DEFAULT_AFFECTION) q.set("a", String(form.affection));
   if (form.refreshesLeft !== DEFAULT_REFRESHES) q.set("r", String(form.refreshesLeft));
   if (form.medalMoja) q.set("m", "1");
-  setIf(q, "d", form.deck.some((s) => s !== null) ? form.deck.map((s) => (s === null ? "" : `${s.cardId}:${s.level}`)).join(",") : "");
+  setIf(q, "d", form.deck.some((s) => s !== null) ? form.deck.map((s) => (s === null ? "" : `${escapeKey(s.cardId)}:${s.level}`)).join(",") : "");
   setIf(q, "i", join(Object.entries(form.items)));
   const { panel } = form;
   setIf(q, "o", join(Object.entries(panel.occasions ?? {})));
@@ -162,6 +171,6 @@ export function writeForm(form: FormState): URLSearchParams {
   setIf(q, "c", join(Object.entries(panel.conditions ?? {})));
   setIf(q, "l", join(Object.entries(panel.left ?? {})));
   if (panel.day3 !== undefined) q.set("t", panel.day3);
-  setIf(q, "u", Object.entries(panel.uncounted ?? {}).map(([key, v]) => `${key}:${v.stat}:${v.points}`).join(","));
+  setIf(q, "u", Object.entries(panel.uncounted ?? {}).map(([key, v]) => `${escapeKey(key)}:${v.stat}:${v.points}`).join(","));
   return q;
 }
