@@ -21,6 +21,8 @@ export interface KihonSample {
 }
 
 export interface HenseiSample {
+  /** The six support cards, row by row, matched by art and checked by eye. */
+  cards: string[];
   levels: number[];
   /** Lit × marks per tile: the card's 凸. */
   marks: number[];
@@ -36,7 +38,9 @@ const DMM_KIHON: KihonSample = {
   slots: [1, "none", 4, 1, "none", 1, 1],
 };
 
-const DMM_HENSEI: HenseiSample = { levels: [60, 60, 50, 60, 60, 60], marks: [4, 4, 4, 4, 4, 4], counts: [2, 0, 1] };
+const DMM_HENSEI: HenseiSample = {
+  cards: ["s_card-3-0099", "s_card-3-0062", "s_card-2-0007", "s_card-3-0082", "s_card-3-0066", "s_card-3-0069"],
+  levels: [60, 60, 50, 60, 60, 60], marks: [4, 4, 4, 4, 4, 4], counts: [2, 0, 1] };
 
 export const KIHON: Record<Sample, KihonSample> = {
   "dmm-01": DMM_KIHON,
@@ -74,10 +78,18 @@ export const KIHON: Record<Sample, KihonSample> = {
 export const HENSEI: Record<Sample, HenseiSample> = {
   "dmm-01": DMM_HENSEI,
   "iphone-15promax-01": DMM_HENSEI,
-  "iphone-15promax-02": { levels: [55, 60, 60, 55, 55, 60], marks: [3, 4, 4, 3, 3, 4], counts: [3, 3, 0] },
-  "iphone-15promax-03": { levels: [50, 60, 50, 60, 60, 60], marks: [2, 4, 4, 4, 4, 4], counts: [4, 3, 1] },
-  "iphone-16e-01": { levels: [40, 40, 40, 50, 45, 60], marks: [0, 0, 0, 4, 1, 4], counts: [0, 0, 0] },
-  "iphone-se3-01": { levels: [50, 50, 40, 40, 40, 60], marks: [2, 4, 0, 0, 0, 4], counts: [3, 2, 0] },
+  "iphone-15promax-02": {
+    cards: ["s_card-3-0065", "s_card-3-0001", "s_card-3-0094", "s_card-3-0079", "s_card-3-0069", "s_card-3-0072"],
+    levels: [55, 60, 60, 55, 55, 60], marks: [3, 4, 4, 3, 3, 4], counts: [3, 3, 0] },
+  "iphone-15promax-03": {
+    cards: ["s_card-3-0042", "s_card-3-0079", "s_card-2-0007", "s_card-3-0069", "s_card-3-0065", "s_card-3-0072"],
+    levels: [50, 60, 50, 60, 60, 60], marks: [2, 4, 4, 4, 4, 4], counts: [4, 3, 1] },
+  "iphone-16e-01": {
+    cards: ["s_card-3-0070", "s_card-3-0069", "s_card-3-0030", "s_card-2-0007", "s_card-3-0077", "s_card-3-0064"],
+    levels: [40, 40, 40, 50, 45, 60], marks: [0, 0, 0, 4, 1, 4], counts: [0, 0, 0] },
+  "iphone-se3-01": {
+    cards: ["s_card-3-0030", "s_card-2-0007", "s_card-3-0070", "s_card-3-0077", "s_card-3-0064", "s_card-3-0069"],
+    levels: [50, 50, 40, 40, 40, 60], marks: [2, 4, 0, 0, 0, 4], counts: [3, 2, 0] },
 };
 
 /** Tenths of a percent as the screen writes it: 371 → "37.1". */
