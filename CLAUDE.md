@@ -49,17 +49,19 @@ Every floored product is computed in integers, because floating point floors 120
 - `load.ts`: `parseCardData` checks the whole file against the contract. One bad value or an empty card list refuses the file, with the path named; fields the contract does not name are dropped (per the plan, decision G23).
 - `fixtures/cards.v1.json`: the sibling's real file, used by the tests. The plan's § Concrete Steps says how to refresh it (decision G22).
 
-The page, its Worker and the screenshot reader come in later milestones of that plan.
+`src/app/` is the page (Preact, Tailwind 4): pure modules (`form.ts` holds the form and its URL round trip, `compute.ts`, `panel.ts`, `items.ts`, `picker.ts`, `fields.ts`, `cap.ts`, `labels.ts`), and components laid out as the game's own tabs (per the plan, decisions G26 and G30). `infra/worker/` is its Cloudflare Worker: `/img/*` from the R2 bucket `tia-assets`, read only, and `/data/cards.json` proxied from gakumas-supportcards (decisions G14, G31); `vite.config.ts` answers the same routes in the dev server from the sibling's local files or the fixture. The screenshot reader and the deployment come in later milestones of that plan.
 
 ## Setup and Development
 
-Install with Bun (1.4): `bun install`. Under the Claude Code sandbox, the global cache in `~/.bun` is not writable, so point Bun at a writable one: `BUN_INSTALL_CACHE_DIR="$TMPDIR/bun-cache" bun install` (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md` § Concrete Steps). There is no page to run yet; `bun run dev` arrives with Milestone 4 of that plan.
+Install with Bun (1.4): `bun install`. Under the Claude Code sandbox, the global cache in `~/.bun` is not writable, so point Bun at a writable one: `BUN_INSTALL_CACHE_DIR="$TMPDIR/bun-cache" bun install` (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md` § Concrete Steps). `bun run dev` serves the page at `http://localhost:5173`. Under the Claude Code sandbox it cannot open its port (`listen EPERM`), so run it outside the sandbox, or set `sandbox.network.allowLocalBinding: true` (per the plan's § Surprises & Discoveries). `SUPPORTCARDS_DIR` points the dev server at a gakumas-supportcards checkout elsewhere than beside this one.
 
 ## Build and Test
 
 - `bun test` runs every `*.test.ts`.
 - `bun run type-check` runs `tsc --noEmit` (TypeScript 7).
 - `bun run lint` runs `oxlint --deny-warnings` with type-aware rules.
+- `bun run build` writes the page to `dist/`.
+- Component tests (`*.test.tsx`) run in happy-dom under `bun test`; how the page looks is checked in a browser.
 
 A clean type check or lint prints only the command line, so judge both by exit status 0. The lint rules in `oxlint.config.ts` were adopted from gakumas-supportcards; an exception goes in that file with its reason and removal condition, never as an inline disable.
 
