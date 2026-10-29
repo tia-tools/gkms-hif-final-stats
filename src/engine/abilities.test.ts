@@ -117,12 +117,13 @@ describe("abilityLines and itemDrinks", () => {
   test("each line fires as often as the counts and its fires left allow, for value × fires", () => {
     const { abilities } = deckSources(DMM_DECK, CARDS, DMM_ITEMS, {});
     const lines = abilityLines(abilities, counts);
-    expect(lines.slice(0, 4).map((l) => [l.fires, l.points])).toEqual([
-      [1, 25],
-      [1, 39],
-      [2, 74],
-      [1, 17],
+    expect(lines.slice(0, 4).map((l) => [l.left, l.fires, l.points])).toEqual([
+      [1, 1, 25],
+      [1, 1, 39],
+      [2, 2, 74],
+      [undefined, 1, 17],
     ]);
+    expect("left" in (lines[3] ?? {})).toBe(false);
   });
 
   test("P-item drinks are fires × drinks per fire", () => {

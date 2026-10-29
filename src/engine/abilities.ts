@@ -33,6 +33,8 @@ export interface AbilityLine {
   key: string;
   cardId: string;
   effect: ClassifiedEffect;
+  /** The fires it had left, for the panel; absent when nothing limits them. */
+  left?: number;
   fires: number;
   points: number;
 }
@@ -121,7 +123,8 @@ export function needs(sources: readonly Source[], wappenLeft: number): Record<st
 export function abilityLines(abilities: readonly Ability[], counts: Counts): AbilityLine[] {
   return abilities.map((a) => {
     const fires = occurrences(a.trigger, counts, a.left);
-    return { key: a.key, cardId: a.cardId, effect: a.effect, fires, points: fires * a.effect.value };
+    const line = { key: a.key, cardId: a.cardId, effect: a.effect, fires, points: fires * a.effect.value };
+    return a.left === undefined ? line : { ...line, left: a.left };
   });
 }
 
