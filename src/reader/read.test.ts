@@ -8,7 +8,7 @@ const refs: References = { thumbs: await loadThumbnails(), icons: await loadIcon
 
 const value = (r: Read<number> | null) => r?.value ?? null;
 
-function slotDigit(s: Slot): SlotDigit | "absent" | null {
+function slotDigit(s: Slot): SlotDigit | "absent" | "hidden" | null {
   if (s.state === "badge") return s.left?.value ?? null;
   return s.state;
 }
@@ -53,6 +53,36 @@ describe("readScreenshot over the samples", () => {
   test("without references the pictures stay unread", async () => {
     const read = readScreenshot(await loadFixture("dmm-01-hensei"));
     expect(read?.tab === "hensei" ? read.tiles.map((t) => t.cards.length) : null).toEqual([0, 0, 0, 0, 0, 0]);
+  });
+
+  test("a tile beyond the image's edge is not read, and the others still are", async () => {
+    // The DMM 編成 sample without its top 200 rows: the first row of tiles is cut.
+    const full = await loadFixture("dmm-01-hensei");
+    const cut = { width: full.width, height: full.height - 200, data: full.data.slice(200 * full.width * 4) };
+    const read = readScreenshot(cut, refs);
+    if (read?.tab !== "hensei") throw new Error("not read as 編成");
+    expect(read.tiles.map((t) => t.cards[0]?.id ?? null)).toEqual([null, null, ...HENSEI["dmm-01"].cards.slice(2)]);
+    expect(read.tiles.map((t) => value(t.level))).toEqual([null, null, 50, 60, 60, 60]);
+  });
+
+  test("a card with no runner-up, or whose own thumbnail is missing, is not sure", async () => {
+    const r = await loadFixture("dmm-01-hensei");
+    const only = new Map([...refs.thumbs].filter(([id]) => id === "s_card-3-0099"));
+    const alone = readScreenshot(r, { ...refs, thumbs: only });
+    expect(alone?.tab === "hensei" ? alone.tiles[0]?.cardConfidence : null).toBe(0);
+    // Without csprt-3-0099's thumbnail, another card leads the first tile, at a fit no own card has.
+    const without = new Map([...refs.thumbs].filter(([id]) => id !== "s_card-3-0099"));
+    const lost = readScreenshot(r, { ...refs, thumbs: without });
+    expect(lost?.tab === "hensei" ? lost.tiles[0]?.cardConfidence : null).toBe(0);
+  });
+
+  test("a stat past the highest cap keeps its digits but loses its confidence", async () => {
+    // On the DMM sample (one unit a pixel), copy Vo's "9" (x 255–268) over its "1" (x 238–251): 9982.
+    const r = await loadFixture("dmm-01-kihon");
+    const data = new Uint8ClampedArray(r.data);
+    for (let y = 585; y < 615; y++) data.copyWithin((y * r.width + 238) * 4, (y * r.width + 255) * 4, (y * r.width + 269) * 4);
+    const read = readScreenshot({ ...r, data });
+    expect(read?.tab === "kihon" ? read.params.vocal : null).toEqual({ value: 9982, confidence: 0 });
   });
 
   test("an image that is neither tab reads as null", () => {

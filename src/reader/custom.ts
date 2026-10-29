@@ -43,7 +43,8 @@ function fits<K extends string>(screen: Integral, frame: Frame, layers: readonly
     .sort((a, b) => a.score - b.score);
 }
 
-const margin = (best: number, next: number | undefined) => (next === undefined || !Number.isFinite(next) ? 1 : (next - best) / next);
+/** How much nearer the best is than the runner-up; with no runner-up, not sure. */
+const margin = (best: number, next: number | undefined) => (next === undefined || !Number.isFinite(next) ? 0 : (next - best) / next);
 
 export interface CustomRead {
   character: { value: Character; confidence: number };

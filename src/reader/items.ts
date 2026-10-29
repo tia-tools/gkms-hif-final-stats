@@ -129,6 +129,7 @@ export function matchItem(screen: Integral, frame: Frame, k: number, icons: Read
   const ranked = [...icons].map(([id, t]) => ({ id, score: iconFit(screen, frame, k, t) })).sort((a, b) => a.score - b.score);
   const [best, next] = ranked;
   if (best === undefined || best.score > ICON_FIT_MAX) return null;
+  // With no runner-up to compare, the match is not sure.
   const second = next?.score ?? Number.POSITIVE_INFINITY;
-  return { id: best.id, confidence: Number.isFinite(second) ? (second - best.score) / second : 1 };
+  return { id: best.id, confidence: Number.isFinite(second) ? (second - best.score) / second : 0 };
 }

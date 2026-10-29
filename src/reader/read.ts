@@ -5,11 +5,11 @@
  */
 
 import type { Stat } from "../engine/types.ts";
-import { type Candidate, type Integral, integral, rankCards } from "./cards.ts";
+import { CARD_FIT_MAX, type Candidate, type Integral, integral, rankCards } from "./cards.ts";
 import { type CustomRead, readCustom } from "./custom.ts";
 import { type Reading, type Templates, classify, readMask, shapes } from "./digits.ts";
 import type { Mask } from "./glyphs.ts";
-import { TILES, countLines, lineMask, litMarks, lvMask } from "./hensei.ts";
+import { TILES, countLines, lineMask, litMarks, lvMask, tile } from "./hensei.ts";
 import { AFFECTION, BONUSES, ITEM_SLOTS, PARAMS, STAR, badgeMask, fieldMask, itemIcon, slotState } from "./kihon.ts";
 import { type Frame, type Rect, boxOf, locate, shows } from "./layout.ts";
 import { type IconTemplate, type SlotRole, matchItem, slotRole } from "./items.ts";
@@ -33,7 +33,8 @@ export interface References {
   icons: ReadonlyMap<string, IconTemplate>;
 }
 
-export type Slot = { role: SlotRole; item: Read<string> | null } & ({ state: "absent" | "none" | "spent" } | { state: "badge"; left: Read<number> | null });
+/** `hidden`: the slot lies beyond the image's edge; `absent`: the row has no item there. */
+export type Slot = { role: SlotRole; item: Read<string> | null } & ({ state: "hidden" | "absent" | "none" | "spent" } | { state: "badge"; left: Read<number> | null });
 
 export interface KihonRead {
   tab: "kihon";
@@ -90,7 +91,6 @@ export function bounded(read: Read<number> | null, min: number, max: number): Re
 /** Whether slot k holds an icon: its frame is coloured, where an empty slot is the page's grey. */
 function present(r: Raster, frame: Frame, k: number): boolean {
   const rect = itemIcon(k);
-  if (!shows(frame, rect, r)) return false;
   const b = boxOf(frame, { x: rect.x + 0.5, y: rect.y + 20, w: 4, h: 40 });
   let coloured = 0;
   let n = 0;
@@ -108,6 +108,7 @@ function present(r: Raster, frame: Frame, k: number): boolean {
 }
 
 function slot(r: Raster, frame: Frame, k: number, screen: Integral, refs: References | null): Slot {
+  if (!shows(frame, itemIcon(k), r)) return { state: "hidden", role: "support", item: null };
   if (!present(r, frame, k)) return { state: "absent", role: "support", item: null };
   const role = slotRole(r, frame, k);
   const state = slotState(r, frame, k);
@@ -127,11 +128,12 @@ function readKihon(r: Raster, frame: Frame, refs: References | null): KihonRead 
   return {
     tab: "kihon",
     star: field(r, frame, STAR, TEMPLATES.bold, WHOLE),
-    params: byStat((s) => field(r, frame, PARAMS[s], TEMPLATES.bold, WHOLE)),
+    // No stat passes the highest cap, 3200 (decision G8).
+    params: byStat((s) => bounded(field(r, frame, PARAMS[s], TEMPLATES.bold, WHOLE), 0, 3200)),
     bonusPermil: byStat((s) => bonus(r, frame, BONUSES[s])),
     affection: bounded(field(r, frame, AFFECTION, TEMPLATES.bold, /^\d{2}$/), 28, 37),
     slots: Array.from({ length: ITEM_SLOTS }, (_, k) => slot(r, frame, k, screen, refs)).filter((s, k, all) => s.state !== "absent" || all.slice(k).some((o) => o.state !== "absent")),
-    custom: present(r, frame, 0) ? readCustom(screen, frame) : null,
+    custom: shows(frame, itemIcon(0), r) && present(r, frame, 0) ? readCustom(screen, frame) : null,
   };
 }
 
@@ -143,12 +145,28 @@ function lastGlyph(mask: Mask, templates: Templates): Read<number> | null {
   return /^\d$/.test(char) ? { value: Number(char), confidence } : null;
 }
 
+/**
+ * Tile k's best cards. Sure only with a runner-up to compare and a fit a tile's own card makes: a
+ * card whose thumbnail did not load can leave another far ahead, and wrong.
+ */
 function tileCards(screen: Integral, frame: Frame, k: number, refs: References | null): Pick<TileRead, "cards" | "cardConfidence"> {
   if (refs === null) return { cards: [], cardConfidence: 0 };
   const ranked = rankCards(screen, frame, k, refs.thumbs);
   const [best, next] = ranked;
-  const cardConfidence = best === undefined ? 0 : next === undefined ? 1 : (next.score - best.score) / next.score;
-  return { cards: ranked.slice(0, 3), cardConfidence };
+  const fits = best !== undefined && next !== undefined && best.score <= CARD_FIT_MAX;
+  return { cards: ranked.slice(0, 3), cardConfidence: fits ? (next.score - best.score) / next.score : 0 };
+}
+
+/** A tile reaching beyond the image's edge is not read: its pixels would be another row's. */
+const UNREAD_TILE: TileRead = { cards: [], cardConfidence: 0, level: null, marks: 0 };
+
+function readTile(r: Raster, frame: Frame, k: number, screen: Integral, refs: References | null): TileRead {
+  if (!shows(frame, tile(k), r)) return UNREAD_TILE;
+  return {
+    ...tileCards(screen, frame, k, refs),
+    level: bounded(parsed(readMask(lvMask(r, frame, k), TEMPLATES.lv), /^\d{1,2}$/, Number), 1, 60),
+    marks: litMarks(r, frame, k),
+  };
 }
 
 function readHensei(r: Raster, frame: Frame, refs: References | null): HenseiRead {
@@ -156,11 +174,7 @@ function readHensei(r: Raster, frame: Frame, refs: References | null): HenseiRea
   const screen = integral(r);
   return {
     tab: "hensei",
-    tiles: Array.from({ length: TILES }, (_, k) => ({
-      ...tileCards(screen, frame, k, refs),
-      level: bounded(parsed(readMask(lvMask(r, frame, k), TEMPLATES.lv), /^\d{1,2}$/, Number), 1, 60),
-      marks: litMarks(r, frame, k),
-    })),
+    tiles: Array.from({ length: TILES }, (_, k) => readTile(r, frame, k, screen, refs)),
     refreshes: lines === null ? null : lastGlyph(lineMask(r, lines[2]), TEMPLATES.count),
   };
 }

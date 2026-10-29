@@ -9,6 +9,16 @@ import { locate } from "./layout.ts";
 
 const icons = await loadIcons();
 
+describe("matchItem", () => {
+  test("with no runner-up icon to compare, a match is not sure", async () => {
+    const r = await loadFixture("dmm-01-kihon");
+    const frame = locate(r);
+    if (frame === null) throw new Error("not located");
+    const only = new Map([...icons].filter(([id]) => id === "img_general_pitem_3-263"));
+    expect(matchItem(integral(r), frame, 5, only)).toEqual({ id: "img_general_pitem_3-263", confidence: 0 });
+  });
+});
+
 describe("the 「Pアイテム」 row", () => {
   for (const sample of SAMPLES) {
     test(`${sample}: each slot's kind by its label, each サポート icon matched or left unknown`, async () => {

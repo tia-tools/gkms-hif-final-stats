@@ -73,9 +73,10 @@ export function integral(r: Raster): Integral {
 
 /** The mean colour over the rectangle [x0, x1) × [y0, y1), clamped to the image, into out[at..at+2]. */
 function boxMean(t: Integral, rect: { x0: number; y0: number; x1: number; y1: number }, out: Float32Array, at: number): void {
-  const cx0 = Math.max(0, Math.min(t.w - 1, Math.round(rect.x0)));
+  // The integral has one more row and column than the image, so a pixel column ends at t.w - 1.
+  const cx0 = Math.max(0, Math.min(t.w - 2, Math.round(rect.x0)));
   const cx1 = Math.max(cx0 + 1, Math.min(t.w - 1, Math.round(rect.x1)));
-  const cy0 = Math.max(0, Math.min(t.h - 1, Math.round(rect.y0)));
+  const cy0 = Math.max(0, Math.min(t.h - 2, Math.round(rect.y0)));
   const cy1 = Math.max(cy0 + 1, Math.min(t.h - 1, Math.round(rect.y1)));
   const n = (cx1 - cx0) * (cy1 - cy0);
   for (let c = 0; c < 3; c++) {
@@ -167,6 +168,12 @@ function refine(tileSig: Signature, thumb: Integral, start: Pose): Fit {
   }
   return best;
 }
+
+/**
+ * Above this the best card is not the tile's, however far it leads: on the samples a tile's own
+ * card fits at 275 or better, and with its own card left out the best fit was 665 or worse.
+ */
+export const CARD_FIT_MAX = 430;
 
 export interface Candidate {
   id: string;
