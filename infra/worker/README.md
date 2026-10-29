@@ -27,6 +27,14 @@ Editor can deploy and update an existing Worker but cannot create one: creating 
 - by hand (below), by an account member with that access;
 - or by `deploy.yml`, under a token that first holds product-level Workers Admin and is narrowed to Editor on this Worker after.
 
+Changing `name` in `wrangler.toml` does not rename the deployed Worker: the next deploy creates a new one. That is a first deployment again, done in this order:
+1. **Deploy the new name by hand,** as below, before anything reaches `main`. Otherwise `deploy.yml` passes every gate and then fails at `wrangler deploy`, because its token is Editor only on the old Worker and cannot create one. The new domain then stays undeployed, and the old Worker keeps serving.
+2. **Move the token** to Editor on the new Worker.
+3. **Release** into `main`: `deploy.yml` now deploys the new Worker.
+4. **Delete the old Worker** in the dashboard. Its custom domain and DNS record go with it.
+
+This happened once, when `gmks-hif-final-stats` became `gkms-hif-final-stats` on 2026-10-29 (issue #27).
+
 Binding the R2 bucket needs no R2 permission: deploying a Worker never needs permissions on the resources it binds. Source: Cloudflare's [Workers roles and permissions](https://developers.cloudflare.com/workers/authorization/workers/), read 2026-10-29. If a deploy still fails with a permissions error, the message names the missing permission. Add that one, and record which.
 
 By hand, for the first deployment or an emergency, with `bunx wrangler login` on the account that holds `tia.run`. Run from the repository root:
