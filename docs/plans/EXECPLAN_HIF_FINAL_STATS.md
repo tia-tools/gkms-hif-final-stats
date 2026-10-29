@@ -18,9 +18,9 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 
 - [x] (2026-10-28 14:40Z) Research: H.I.F. rating formula, 本戦 schedule, memory carry-over, prior art (gakumas-tools), art-matching feasibility on the samples. Findings in `Context and Orientation` and `Surprises & Discoveries`.
 - [x] (2026-10-28 15:10Z) Design interview (grill-me) with the user: decisions G1–G13 in the `Decision Log`.
-- [x] (2026-10-28 15:20Z) Repository scaffolded from `Taka499/project-template` at b52b8df into `~/Developer/gmks-hif-final-stats`; `docs/adr/0001-card-data-and-art-are-shared-with-gakumas-supportcards-at-runtime.md` written; this plan drafted.
+- [x] (2026-10-28 15:20Z) Repository scaffolded from `Taka499/project-template` at b52b8df into `~/Developer/gkms-hif-final-stats`; `docs/adr/0001-card-data-and-art-are-shared-with-gakumas-supportcards-at-runtime.md` written; this plan drafted.
 - [x] (2026-10-29 09:20Z) Open item O2: the user allowed the sample screenshots to be committed as test fixtures as they are (decision G32).
-- [x] (2026-10-29 09:20Z) Open item O3: the subdomain is `gmks-hif-final-stats.tia.run` (decision G34).
+- [x] (2026-10-29 09:20Z) Open item O3: the subdomain is `gkms-hif-final-stats.tia.run` (decision G34).
 - [x] (2026-10-29 01:10Z) Milestone 1: toolchain, rating arithmetic, スター性 bound, schedule-only bound. Issue #4, branch `feature/m1-rating-schedule`: `bun test` 30 pass, type-check and lint clean, every guard seen red by mutation (`Artifacts and Notes`).
 - [x] (2026-10-29 02:07Z) Milestone 1 merged into `develop` by pull request #5 (merge commit 841b7be), closing #4.
 - [x] (2026-10-29 03:02Z) Milestone 2 (issue #6, branch `feature/m2-card-data`), sibling half: gakumas-supportcards publishes `dist/data/cards.v1.json`, worked by a session in that repository (decision G21). Its pull request #57 (`tia-tools/gakumas-supportcards`) merged into its `develop` as d08f3de. The file goes live only after the sibling's `develop` is released into `main`, which deploys. Milestone 4's Worker needs that; this milestone's tests do not.
@@ -40,7 +40,7 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-29 12:56Z) Milestone 5 merged into `develop` by pull request #14 (merge commit ede44c3), closing #12.
 - [x] (2026-10-29 13:08Z) The sibling's card file is live: gakumas-supportcards released its `develop` into `main` (its pull request #58, merge ad66896). `https://gakumas-supportcards.tia.run/data/cards.v1.json` answers 200, format 1, 210 cards, and is byte-identical to `src/data/fixtures/cards.v1.json` (SHA-256 `b989a77e…`).
 - [x] (2026-10-29 13:12Z) Milestone 6 (issue #15, branch `feature/m6-deploy`), the code:
-  - `infra/worker/wrangler.toml` for `gmks-hif-final-stats.tia.run`; `bunx wrangler@4 deploy --dry-run` reads it, lists both bindings and gives no warning;
+  - `infra/worker/wrangler.toml` for `gkms-hif-final-stats.tia.run`; `bunx wrangler@4 deploy --dry-run` reads it, lists both bindings and gives no warning;
   - `.github/workflows/check.yml` and `deploy.yml`, adopted from the sibling;
   - tests pinning both, and `infra/worker/README.md` with the deploy and verify steps.
 
@@ -50,7 +50,7 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
   - **Setup:** the user did the one-time setup: a first deploy by hand, the API token, and the two repository secrets, both listed by name (set at 15:04Z and 15:05Z). That first deploy already served `develop`'s build, the same content-hashed `index-ZNFxg2yT.js` and `index-BoUCNPB-.css`.
   - **Release:** pull request #17 from `develop` into `main` merged as 8931677. Its tree equals `develop`'s, on which all five gates passed before the merge (`bun test` 249 pass).
   - **Deploy:** `deploy.yml`'s run on that merge passed every gate and its deploy step in 43 s. Its one annotation is GitHub's notice that `ubuntu-latest` moves to Ubuntu 26.
-  - **Verify:** every check in `infra/worker/README.md` § Verify passes on `https://gmks-hif-final-stats.tia.run`, and its `/data/cards.json` is byte-identical to `src/data/fixtures/cards.v1.json`.
+  - **Verify:** every check in `infra/worker/README.md` § Verify passes on `https://gkms-hif-final-stats.tia.run`, and its `/data/cards.json` is byte-identical to `src/data/fixtures/cards.v1.json`.
   - **Acceptance:** dropped into the live page in Chrome, the DMM pair reads 6971, S5 short by 73, with no field ringed and all 21 images loaded, the same as `bun run dev`. This is Milestone 6's acceptance.
 - [x] (2026-10-29 15:57Z) The plan's acceptance (`Validation and Acceptance`), checked on the live page in Chrome. Every pair's values are the ones `src/test-support/samples.ts` records, and no image failed to load.
 
@@ -356,7 +356,7 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
   Rationale: The user identified the purple character in the iPhone 15 Pro Max samples 01 and 03 as もじゃ, and the blue one in 02 as the robot. They pointed at the master data and GkmasObjectManager to check which layer is which. On the colour: "We can assume only yellow was chosen for now."
   Date/Author: 2026-10-29, user (identification, the 黄 assumption, the source of the templates); agent (the layer table, read from the master data).
 
-- Decision G34: The page will live at `gmks-hif-final-stats.tia.run` (open item O3). That is the repository's name, the way the sibling lives at `gakumas-supportcards.tia.run`.
+- Decision G34: The page will live at `gkms-hif-final-stats.tia.run` (open item O3). That is the repository's name, the way the sibling lives at `gakumas-supportcards.tia.run`.
   Date/Author: 2026-10-29, user.
 
 - Decision G35: How the reader reads numbers (`src/reader/`, pure functions over a `Raster`, the shape of the browser's `ImageData`).
@@ -381,7 +381,7 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
 
 - Decision G39: How the page is deployed, adopted from gakumas-supportcards.
   - `main` is production and `develop` development. A release is a pull request from `develop` into `main`, and its merge is the deploy: `.github/workflows/deploy.yml` runs on that push, builds from `main`, and deploys only after the unit tests, the type check, the lint and the build pass. `check.yml` runs the same gates on every pull request into `develop`, read only, with no secrets.
-  - The Worker is deployed with `bunx wrangler@4 deploy` from `infra/worker/`, on the custom domain `gmks-hif-final-stats.tia.run`; Cloudflare manages its DNS record.
+  - The Worker is deployed with `bunx wrangler@4 deploy` from `infra/worker/`, on the custom domain `gkms-hif-final-stats.tia.run`; Cloudflare manages its DNS record.
   - It uses two repository secrets: `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_API_TOKEN`, an account-owned token. The token's least permissions are Workers Editor on this Worker and Zone → Workers Routes → Write on `tia.run`. Binding R2 needs no R2 permission at deploy.
   - Editor cannot create a Worker; creating one needs product-level Workers Admin, and a token can name a Worker only once it exists. So the first deployment is either by hand, by an account member with that access, or under a token that first holds product-level Admin and is narrowed to Editor on this Worker after. Source: Cloudflare's Workers roles and permissions page, read 2026-10-29, after the Codex review flagged it.
   - The workflows' shape is pinned by `infra/workflows.test.ts`: triggers, read-only permissions, actions pinned to hashes, CI on the local Bun, every gate before the deploy. `infra/worker/wrangler.test.ts` keeps `run_worker_first` equal to the paths the Worker answers, and refuses an environment that would inherit the custom domain.
@@ -421,9 +421,9 @@ It uses no OCR and no model: anchors, Otsu thresholds, templates cut from the sa
 
 Milestone 4 (2026-10-29) put the bound on a page. Entered by hand at `http://localhost:5173`, the DMM sample reads 6971 and S5 short by 73, the same as Milestone 3. Each count can be changed in the folded panel, and the URL carries the whole form. The Worker is written and tested but not deployed; that is Milestone 6. One lesson: component tests in happy-dom passed while a real browser showed two plain usability bugs, a focus that never came and a width that never applied. A walkthrough of the real page caught both, and each is now pinned by a test.
 
-Milestone 6 (2026-10-29) put the page live at `https://gmks-hif-final-stats.tia.run`. One Worker serves the built page, the sibling's thumbnails and icons from `tia-assets`, and its card file. `check.yml` gates every pull request into `develop`. A release into `main` runs the same gates again in `deploy.yml`, which then deploys. Dropped into the live page, the DMM pair reads 6971, S5 short by 73, as it does in `bun run dev`. One lesson: the deploy guidance adopted from the sibling's README called the route permission Workers Routes: Edit, where Cloudflare's is Write, and missed that Workers Editor cannot create a Worker. Adopted documentation needs the same check against the provider's own pages as adopted code gets from its tests. Here, the Codex review caught both.
+Milestone 6 (2026-10-29) put the page live at `https://gkms-hif-final-stats.tia.run`. One Worker serves the built page, the sibling's thumbnails and icons from `tia-assets`, and its card file. `check.yml` gates every pull request into `develop`. A release into `main` runs the same gates again in `deploy.yml`, which then deploys. Dropped into the live page, the DMM pair reads 6971, S5 short by 73, as it does in `bun run dev`. One lesson: the deploy guidance adopted from the sibling's README called the route permission Workers Routes: Edit, where Cloudflare's is Write, and missed that Workers Editor cannot create a Worker. Adopted documentation needs the same check against the provider's own pages as adopted code gets from its tests. Here, the Codex review caught both.
 
-The plan as a whole (2026-10-29) is accepted. A player can open `https://gmks-hif-final-stats.tia.run`, drop a memory's two screenshots, and read for every rank from S5 down whether the memory's best case reaches it, and by how much. On the live page all six sample pairs fill the form. Only one field is ringed in all six: the SE3 pair's 親愛度, which its screenshot hides. The DMM pair needs no correction and agrees with Milestone 3's hand-checked breakdown, 6971 and S5 short by 73.
+The plan as a whole (2026-10-29) is accepted. A player can open `https://gkms-hif-final-stats.tia.run`, drop a memory's two screenshots, and read for every rank from S5 down whether the memory's best case reaches it, and by how much. On the live page all six sample pairs fill the form. Only one field is ringed in all six: the SE3 pair's 親愛度, which its screenshot hides. The DMM pair needs no correction and agrees with Milestone 3's hand-checked breakdown, 6971 and S5 short by 73.
 
 What remains is on the board:
 - 選抜's counts are still decision G27's stopgap (#19).
@@ -623,7 +623,7 @@ Milestone 5 reads the screenshots. It starts as a prototype, judged against the 
 - Tests run the reader over the committed samples (G32) and compare with hand-written expected values.
 
 Milestone 6 deploys.
-- `wrangler.toml` for `gmks-hif-final-stats.tia.run` (G34) under the tia-tools Cloudflare account.
+- `wrangler.toml` for `gkms-hif-final-stats.tia.run` (G34) under the tia-tools Cloudflare account.
 - `.github/workflows/check.yml` and `deploy.yml`, adopted from the sibling with the same pinned actions and a gate comment at the top of each.
 - The GitHub ruleset via the user-level `protect-github.sh` (the repository is public).
 - Acceptance: the live site gives the same verdict for the DMM samples as `bun run dev` does.
@@ -631,7 +631,7 @@ Milestone 6 deploys.
 
 ## Concrete Steps
 
-All commands run in `~/Developer/gmks-hif-final-stats` unless stated. Branch per milestone from `develop` (Git-flow; create `develop` from `main` after the first commit), merge back with a merge commit.
+All commands run in `~/Developer/gkms-hif-final-stats` unless stated. Branch per milestone from `develop` (Git-flow; create `develop` from `main` after the first commit), merge back with a merge commit.
 
 Milestone 1, after copying the toolchain:
 
@@ -950,7 +950,7 @@ Open items, carried until answered:
 - O1: answered for 本戦 on 2026-10-29 (decision G24). 選抜 counts are still open; decision G27's stopgap stands in for them.
 - O7: answered on 2026-10-29 (decision G33). メダルもじゃ is a combination of the first slot's カスタム item, read by its layers, and assumed 黄.
 - O2: answered on 2026-10-29 (decision G32). The samples are committed as they are.
-- O3: answered on 2026-10-29 (decision G34). The subdomain is `gmks-hif-final-stats`.
+- O3: answered on 2026-10-29 (decision G34). The subdomain is `gkms-hif-final-stats`.
 - O4: whether the game floors, rounds or ceils base × (1 + bonus). Settle it with one in-game lesson result before trusting margins of a point or two.
 - O5: the 親愛度 level in force at each 本戦 スター性 gain below Lv37. Until it is answered, decision G16's upper-bound reading applies.
 - O6: whether any trigger names a scenario token that separates 選抜 (produce-007) from 本戦 (produce-008). The sibling's `count.ts` treats a trigger of another scenario as 0. As of 2026-10-29, no trigger in the published data carries `scenario` (`Surprises & Discoveries`).
@@ -1002,3 +1002,5 @@ Revision note (2026-10-29, Milestone 6 built): the Worker's `wrangler.toml`, the
 Revision note (2026-10-29, Milestone 6 deployed): Milestone 6 merged (#16), the user did the one-time setup, and the release #17 merged into `main` and deployed. Progress records the deploy run, the live checks and the DMM pair read on the live page. Outcomes records Milestone 6's outcome.
 
 Revision note (2026-10-29, closed out): the plan's acceptance checked on the live page, with every sample pair, the スター性 case and 「暫定」. Added the plan-wide outcome, and the stamp that closes the plan. Its open items moved to the board (#19–#24, with #13). ADR 0002 and ADR 0001's update carry its durable decisions. This is the plan's last edit.
+
+Revision note (2026-10-29, renamed, issue #27): the name was `gmks-hif-final-stats` until this note, a slip for `gkms` (学マス) that came in with the answer to O3 and spread to the repository, the Worker and the subdomain. At the user's request, the repository, the Worker and the domain became `gkms-hif-final-stats`, and this plan's text was corrected to match, decision G34 included. Every record in it of the site being live, checked or deployed before this note was made at `https://gmks-hif-final-stats.tia.run`, the domain then in use.

@@ -1,10 +1,10 @@
-# gmks-hif-final-stats.tia.run Worker
+# gkms-hif-final-stats.tia.run Worker
 
 One Cloudflare Worker serves the whole page: the built page as static assets, card thumbnails and P-item icons from the R2 bucket `tia-assets`, read only, and the sibling's card data at this origin (`docs/adr/0001`; `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decisions G14, G31 and G34). `wrangler.toml` runs the Worker's code only for `/img/*` and `/data/cards.json` (`run_worker_first`); every other path is answered by the assets directly. `wrangler.test.ts` keeps that list equal to the paths `worker.ts` answers.
 
 | Route | Serves |
 |---|---|
-| `https://gmks-hif-final-stats.tia.run/` | the page built by `bun run build` (`dist/`) |
+| `https://gkms-hif-final-stats.tia.run/` | the page built by `bun run build` (`dist/`) |
 | `/img/w192/img_general_{assetId}_full.webp`, `/img/w48/img_general_pitem_{r}-{nnn}.webp` | a card thumbnail or a P-item icon from `tia-assets`, through `img.ts`, adopted unchanged from gakumas-supportcards; any other `/img/` path, the private `master/` prefix included, is a 404 marked `no-store` |
 | `/data/cards.json` | gakumas-supportcards' `https://gakumas-supportcards.tia.run/data/cards.v1.json`, passed through with an hour's cache; a failure upstream is a 502 marked `no-store` (`data.ts`) |
 
@@ -20,7 +20,7 @@ It needs two repository secrets, set once by a person in the repository's settin
 
 | Scope | Permission | Used by |
 |---|---|---|
-| Workers, only the Worker `gmks-hif-final-stats` | **Editor** | the script and the static assets |
+| Workers, only the Worker `gkms-hif-final-stats` | **Editor** | the script and the static assets |
 | Zone, only `tia.run` | **Workers Routes: Write** | the custom domain in `wrangler.toml` |
 
 Editor can deploy and update an existing Worker but cannot create one: creating a Worker needs **Admin** at the Workers product level, and a token can name a Worker only once it exists. So the first deployment is either:
@@ -35,7 +35,7 @@ By hand, for the first deployment or an emergency, with `bunx wrangler login` on
     cd infra/worker
     bunx wrangler deploy
 
-The `custom_domain` route makes Cloudflare attach the Worker to `gmks-hif-final-stats.tia.run` and manage its DNS record. Check a configuration change without logging in or deploying:
+The `custom_domain` route makes Cloudflare attach the Worker to `gkms-hif-final-stats.tia.run` and manage its DNS record. Check a configuration change without logging in or deploying:
 
     bunx wrangler deploy --dry-run --outdir "$TMPDIR/wrangler-out"
 
@@ -43,13 +43,13 @@ It prints the bindings (`env.IMAGES (tia-assets)`, `env.ASSETS`). Under the Clau
 
 ## Verify
 
-    curl -sI https://gmks-hif-final-stats.tia.run/ | head -3
+    curl -sI https://gkms-hif-final-stats.tia.run/ | head -3
     # -> HTTP/2 200, content-type: text/html
-    curl -s https://gmks-hif-final-stats.tia.run/data/cards.json | jq '.formatVersion, (.cards | length)'
+    curl -s https://gkms-hif-final-stats.tia.run/data/cards.json | jq '.formatVersion, (.cards | length)'
     # -> 1, then the number of cards the sibling publishes
-    curl -sI https://gmks-hif-final-stats.tia.run/img/w192/img_general_csprt-3-0099_full.webp
+    curl -sI https://gkms-hif-final-stats.tia.run/img/w192/img_general_csprt-3-0099_full.webp
     # -> HTTP/2 200, content-type: image/webp, cache-control: public, max-age=31536000, immutable
-    curl -sI https://gmks-hif-final-stats.tia.run/img/master/img_general_csprt-3-0099_full.webp
+    curl -sI https://gkms-hif-final-stats.tia.run/img/master/img_general_csprt-3-0099_full.webp
     # -> HTTP/2 404, cache-control: no-store   (a master must be refused even where it exists)
 
 Then open the page, drop the DMM sample's two screenshots (`src/reader/fixtures/dmm-01-kihon.png` and `dmm-01-hensei.png`), and check that it reads 6971, S5 short by 73, as `bun run dev` does (Milestone 6's acceptance).

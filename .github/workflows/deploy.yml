@@ -1,4 +1,4 @@
-# Guards: production. This is the only path by which https://gmks-hif-final-stats.tia.run changes.
+# Guards: production. This is the only path by which https://gkms-hif-final-stats.tia.run changes.
 # It builds the page from `main` and deploys the Worker, and refuses to when the unit tests, the
 # type check, the lint or the build fail. `main` is production and `develop` is development:
 # merging a release into main IS the deploy. Adopted from gakumas-supportcards' deploy.yml on

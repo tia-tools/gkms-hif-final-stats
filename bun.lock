@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "gmks-hif-final-stats",
+      "name": "gkms-hif-final-stats",
       "dependencies": {
         "preact": "^10.29.8",
       },

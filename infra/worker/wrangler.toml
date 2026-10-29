@@ -1,4 +1,4 @@
-name = "gmks-hif-final-stats"
+name = "gkms-hif-final-stats"
 main = "worker.ts"
 compatibility_date = "2026-09-01"
 
@@ -6,7 +6,7 @@ compatibility_date = "2026-09-01"
 # since the tia.run zone is in the same account. One single-level subdomain per tia-tools app: the
 # zone's free Universal SSL certificate covers no second level.
 routes = [
-  { pattern = "gmks-hif-final-stats.tia.run", custom_domain = true }
+  { pattern = "gkms-hif-final-stats.tia.run", custom_domain = true }
 ]
 
 # The built page (`bun run build` at the repository root writes dist/). Only the two paths the
