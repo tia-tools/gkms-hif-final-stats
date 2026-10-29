@@ -299,7 +299,7 @@ Since Milestone 1 it also holds the toolchain and the first engine modules:
 - `oxlint.config.ts`, the lint rules, adopted from the sibling on 2026-10-29;
 - `src/engine/types.ts`, `rating.ts`, `star.ts` and `schedule.ts`, each with a co-located `*.test.ts`. `Interfaces and Dependencies` lists what each exports.
 
-The user keeps sample screenshots in `temp/`, untracked; see open item O2 before committing any of them.
+The user keeps sample screenshots in `temp/`, untracked. Since Milestone 5 they are also committed as the reader's fixtures (decision G32), in `src/reader/fixtures/` as `<device>-<nn>-kihon.png` (the 基本情報 tab) and `<device>-<nn>-hensei.png` (the 編成 tab). The copies keep every pixel byte, but not the capture time that iOS writes into its screenshots (the `eXIf` and `iTXt` chunks).
 
 The sibling project gakumas-supportcards (checkout at `~/Developer/gakumas-supportcards`, GitHub `tia-tools/gakumas-supportcards`, live at `https://gakumas-supportcards.tia.run`) supplies the support card data and art. Its own `CLAUDE.md` describes it; the parts this plan relies on are repeated here.
 
