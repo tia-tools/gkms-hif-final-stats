@@ -4,6 +4,7 @@
  * fires left of the abilities on it. Pure.
  */
 
+import type { ParsedTrigger } from "../data/contract.ts";
 import { conditionKey, filterKey } from "../engine/count.ts";
 import type { BestResult, PanelState } from "../engine/total.ts";
 import { conditionLabel, memberLabel, occasionLabel } from "./labels.ts";
@@ -23,40 +24,50 @@ export interface CountRow {
 /** Card id → name, for the fires-left rows. */
 export type CardNames = ReadonlyMap<string, string>;
 
-function occasionsOf(result: BestResult): string[] {
-  const seen = new Set<string>(["GetProduceCard", "GetProduceDrink"]);
-  for (const line of result.lines) if (line.effect.trigger) seen.add(line.effect.trigger.occasion);
-  return [...seen];
+/** Anything that fires on a trigger in the result: an ability line, or a drink-granting P-item. */
+interface Fired {
+  key: string;
+  cardId: string;
+  trigger: ParsedTrigger;
+  itemName?: string;
+  left?: number;
 }
 
-type Line = BestResult["lines"][number];
+function firedOf(result: BestResult): Fired[] {
+  const lines = result.lines.flatMap((l): Fired[] => {
+    if (l.effect.trigger === undefined) return [];
+    const base = { key: l.key, cardId: l.cardId, trigger: l.effect.trigger, ...(l.effect.itemName ? { itemName: l.effect.itemName } : {}) };
+    return [l.left === undefined ? base : { ...base, left: l.left }];
+  });
+  return [...lines, ...result.drinks];
+}
 
-function filterRows(occasion: string, line: Line, result: BestResult, panel: PanelState): CountRow[] {
+function filterRows(occasion: string, f: Fired, result: BestResult, panel: PanelState): CountRow[] {
   const total = result.counts.occasions[occasion] ?? 0;
-  return (line.effect.trigger?.filters ?? [])
-    .filter((f) => f.family !== "lessonStat")
-    .map((f) => {
-      const key = filterKey(occasion, f);
-      const value = result.counts.filters[key] ?? result.counts.filters[`${occasion}.${f.family}`] ?? total;
-      return { kind: "filters", key, label: memberLabel(f.family, f.member), value, changed: panel.filters?.[key] !== undefined, depth: 1 };
+  return (f.trigger.filters ?? [])
+    .filter((filter) => filter.family !== "lessonStat")
+    .map((filter) => {
+      const key = filterKey(occasion, filter);
+      const value = result.counts.filters[key] ?? result.counts.filters[`${occasion}.${filter.family}`] ?? total;
+      return { kind: "filters", key, label: memberLabel(filter.family, filter.member), value, changed: panel.filters?.[key] !== undefined, depth: 1 };
     });
 }
 
-function conditionRows(occasion: string, line: Line, result: BestResult, panel: PanelState): CountRow[] {
+function conditionRows(occasion: string, f: Fired, result: BestResult, panel: PanelState): CountRow[] {
   const total = result.counts.occasions[occasion] ?? 0;
-  return (line.effect.trigger?.conditions ?? []).map((c) => {
+  return (f.trigger.conditions ?? []).map((c) => {
     const key = conditionKey(occasion, c);
     return { kind: "conditions", key, label: conditionLabel(c), value: result.counts.conditions[key] ?? total, changed: panel.conditions?.[key] !== undefined, depth: 1 };
   });
 }
 
-function leftRows(line: Line, panel: PanelState, names: CardNames): CountRow[] {
-  if (line.left === undefined) return [];
-  const label = `${names.get(line.cardId) ?? line.cardId}${line.effect.itemName ? `「${line.effect.itemName}」` : ""}`;
-  return [{ kind: "left", key: line.key, label, value: line.left, changed: panel.left?.[line.key] !== undefined, depth: 1 }];
+function leftRows(f: Fired, panel: PanelState, names: CardNames): CountRow[] {
+  if (f.left === undefined) return [];
+  const label = `${names.get(f.cardId) ?? f.cardId}${f.itemName ? `「${f.itemName}」` : ""}`;
+  return [{ kind: "left", key: f.key, label, value: f.left, changed: panel.left?.[f.key] !== undefined, depth: 1 }];
 }
 
-function rowsFor(occasion: string, result: BestResult, panel: PanelState, names: CardNames): CountRow[] {
+function rowsFor(occasion: string, fired: readonly Fired[], result: BestResult, panel: PanelState, names: CardNames): CountRow[] {
   const head: CountRow = {
     kind: "occasions",
     key: occasion,
@@ -65,14 +76,16 @@ function rowsFor(occasion: string, result: BestResult, panel: PanelState, names:
     changed: panel.occasions?.[occasion] !== undefined,
     depth: 0,
   };
-  const lines = result.lines.filter((line) => line.effect.trigger?.occasion === occasion);
-  const rows = lines.flatMap((line) => [...filterRows(occasion, line, result, panel), ...conditionRows(occasion, line, result, panel), ...leftRows(line, panel, names)]);
+  const on = fired.filter((f) => f.trigger.occasion === occasion);
+  const rows = on.flatMap((f) => [...filterRows(occasion, f, result, panel), ...conditionRows(occasion, f, result, panel), ...leftRows(f, panel, names)]);
   const seen = new Set<string>();
   return [head, ...rows.filter((row) => !seen.has(`${row.kind} ${row.key}`) && seen.add(`${row.kind} ${row.key}`))];
 }
 
 export function panelRows(result: BestResult, panel: PanelState, names: CardNames): CountRow[] {
-  return occasionsOf(result).flatMap((occasion) => rowsFor(occasion, result, panel, names));
+  const fired = firedOf(result);
+  const occasions = [...new Set(["GetProduceCard", "GetProduceDrink", ...fired.map((f) => f.trigger.occasion)])];
+  return occasions.flatMap((occasion) => rowsFor(occasion, fired, result, panel, names));
 }
 
 /** The panel with one count set, or removed when `value` is null. */

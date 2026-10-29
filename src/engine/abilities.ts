@@ -26,6 +26,7 @@ export interface Ability extends Source {
 /** A held P-item that grants P-drinks when it fires (decision G13). */
 export interface DrinkSource extends Source {
   itemId: string;
+  itemName: string;
   perFire: number;
 }
 
@@ -85,7 +86,7 @@ function cardDrinks(card: Card, held: ReadonlyMap<string, HeldItem>, overrides: 
     if (item === undefined || grant.drinks === undefined) return [];
     const key = `${card.id}/${grant.itemId}`;
     const left = overrides[key] ?? item.remaining ?? grant.cap;
-    return [{ key, cardId: card.id, itemId: grant.itemId, perFire: grant.drinks.perFire, trigger: grant.drinks.trigger, left }];
+    return [{ key, cardId: card.id, itemId: grant.itemId, itemName: grant.itemName, perFire: grant.drinks.perFire, trigger: grant.drinks.trigger, left }];
   });
 }
 
@@ -128,7 +129,20 @@ export function abilityLines(abilities: readonly Ability[], counts: Counts): Abi
   });
 }
 
+/** A drink-granting P-item's fires under a set of counts, and the P-drinks they grant. */
+export interface DrinkLine extends DrinkSource {
+  fires: number;
+  drinks: number;
+}
+
+export function drinkLines(drinks: readonly DrinkSource[], counts: Counts): DrinkLine[] {
+  return drinks.map((d) => {
+    const fires = occurrences(d.trigger, counts, d.left);
+    return { ...d, fires, drinks: fires * d.perFire };
+  });
+}
+
 /** The P-drinks the held P-items grant under `counts`. */
 export function itemDrinks(drinks: readonly DrinkSource[], counts: Counts): number {
-  return drinks.reduce((sum, d) => sum + occurrences(d.trigger, counts, d.left) * d.perFire, 0);
+  return drinkLines(drinks, counts).reduce((sum, d) => sum + d.drinks, 0);
 }
