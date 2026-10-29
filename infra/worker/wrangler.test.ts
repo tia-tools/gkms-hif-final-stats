@@ -12,8 +12,8 @@ const root = table(config);
 
 describe("wrangler.toml", () => {
   test("deploys the Worker on its own tia.run subdomain (G34)", () => {
-    expect(root["name"]).toBe("gmks-hif-final-stats");
-    expect(root["routes"]).toEqual([{ pattern: "gmks-hif-final-stats.tia.run", custom_domain: true }]);
+    expect(root["name"]).toBe("gkms-hif-final-stats");
+    expect(root["routes"]).toEqual([{ pattern: "gkms-hif-final-stats.tia.run", custom_domain: true }]);
   });
 
   test("runs the Worker first exactly on the paths worker.ts answers, and serves dist/ for the rest", () => {
