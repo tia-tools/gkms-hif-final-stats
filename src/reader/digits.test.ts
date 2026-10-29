@@ -16,6 +16,12 @@ describe("classify", () => {
     expect(classify(a, templates)).toEqual({ char: "1", confidence: 1 });
   });
 
+  test("far from every template is no sure reading, however far it leads (a damaged or covered glyph)", () => {
+    // Three quarters inked: 0.25 from "1", 0.75 from "7".
+    const cells = Float32Array.from({ length: CELLS }, (_, i) => (i < (CELLS * 3) / 4 ? 1 : 0));
+    expect(classify(cells, templates)).toEqual({ char: "1", confidence: 0 });
+  });
+
   test("halfway between two templates is a guess", () => {
     expect(classify(new Float32Array(CELLS).fill(0.5), templates).confidence).toBe(0);
   });

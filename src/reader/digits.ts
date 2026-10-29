@@ -22,8 +22,16 @@ export function distance(a: Float32Array, b: Float32Array): number {
 }
 
 /**
+ * Beyond this from its nearest template a glyph is not sure, however far it leads: damaged, covered
+ * or not a digit at all. Every sample digit sits within 0.18 of its own template cut from the other
+ * memories. A bar this loose cannot reject a kana or kanji that resembles a digit (the nearest came
+ * within 0.110); the field's format and its range catch those.
+ */
+export const GLYPH_FIT_MAX = 0.2;
+
+/**
  * The nearest template's character, and the confidence: how much nearer it is than the runner-up,
- * as a share of the runner-up's distance.
+ * as a share of the runner-up's distance, or 0 past GLYPH_FIT_MAX.
  */
 export function classify(cells: Float32Array, templates: Templates): { char: string; confidence: number } {
   let best = { char: "", d: Number.POSITIVE_INFINITY };
@@ -35,7 +43,7 @@ export function classify(cells: Float32Array, templates: Templates): { char: str
       best = { char, d };
     } else if (d < second) second = d;
   }
-  const confidence = Number.isFinite(second) && second > 0 ? (second - best.d) / second : 0;
+  const confidence = Number.isFinite(second) && second > 0 && best.d <= GLYPH_FIT_MAX ? (second - best.d) / second : 0;
   return { char: best.char, confidence };
 }
 
