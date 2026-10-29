@@ -1,0 +1,8 @@
+# dependencies (bun install)
+node_modules
+
+# OS
+.DS_Store
+
+# MulmoTerminal's per-directory settings (header colour); local to this machine
+.mulmoterminal.json

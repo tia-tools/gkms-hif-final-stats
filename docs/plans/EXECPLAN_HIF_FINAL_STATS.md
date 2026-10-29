@@ -11,6 +11,8 @@ A player chasing S5 makes many 選抜試験メモリー and has to decide which 
 
 To see it working, run `bun run dev`, open `http://localhost:5173`, drop the two DMM sample screenshots, and read the S5 line. The worked example in `Artifacts and Notes` predicts what that line should say.
 
+The work is tracked on the GitHub board `tia-tools` project 1, one issue per milestone branch (decision G20): Milestone 1 is issue #4.
+
 
 ## Progress
 
@@ -20,7 +22,8 @@ To see it working, run `bun run dev`, open `http://localhost:5173`, drop the two
 - [ ] Open item O1: the user supplies typical 選抜 and 本戦 play counts (route sheet). Needed by Milestone 3.
 - [ ] Open item O2: decide whether the sample screenshots may be committed as test fixtures in this public repository. Needed by Milestone 5.
 - [ ] Open item O3: choose the tia.run subdomain. Needed by Milestone 6.
-- [ ] Milestone 1: toolchain, rating arithmetic, スター性 bound, schedule-only bound.
+- [x] (2026-10-29 01:10Z) Milestone 1: toolchain, rating arithmetic, スター性 bound, schedule-only bound. Issue #4, branch `feature/m1-rating-schedule`: `bun test` 30 pass, type-check and lint clean, every guard seen red by mutation (`Artifacts and Notes`).
+- [ ] Milestone 1 merged into `develop` by a pull request that closes #4.
 - [ ] Milestone 2: the shared card data (sibling publishes it; this repo loads it).
 - [ ] Milestone 3: support abilities and P-items in 本戦; the full best-case bound.
 - [ ] Milestone 4: the form page and its Worker.
@@ -44,6 +47,15 @@ To see it working, run `bun run dev`, open `http://localhost:5173`, drop the two
 
 - Observation: The sample memory is far from S5 even before support abilities are counted.
   Evidence: DMM sample at Vo 1982, Da 2468, Vi 1050 (total 5500). Lessons and 授業 alone add about 910 (see `Artifacts and Notes`). Its abilities add roughly 370 more, still about 260 short of 7044.
+
+- Observation: Multiplying by a bonus in floating point and then flooring gives wrong answers for real inputs. floor(120 × 1.025) is 122, but 120 at +2.5% is exactly 123. The same happens for 50 at +8.2% (90 instead of 91) and for 100 at +15% (114 instead of 115).
+  Evidence: a scan of every bonus from 0.0% to 150.0% against the lesson bases found 10 mismatches between `Math.floor(base * (1 + permil / 1000))` and `Math.floor(base * (1000 + permil) / 1000)`, and 10 more for スター性 bases 1–200 at the 親愛度 percentages (2026-10-29). The engine therefore multiplies in integers (decision G18).
+
+- Observation: On an empty `src/`, neither `bun test` nor the type check passes, contrary to what Milestone 1 first said. Lint does pass.
+  Evidence: `bun test` exits 1 with "0 test files matching **{.test,.spec,_test_,_spec_}.{js,ts,jsx,tsx}", and `tsc --noEmit` exits 2 with "TS18003: No inputs were found in config file". Both pass once the first module and its test exist.
+
+- Observation: `bun install` resolved newer versions than the sibling's lockfile, all inside the sibling's own version ranges: oxlint 1.90.0 (sibling 1.85.0), oxlint-tsgolint 7.0.2005 (7.0.2003), eslint-plugin-security 4.2.0 (4.1.0) and @types/bun 1.4.4 (1.4.2). TypeScript is 7.0.2 in both. The lint config still loads under them.
+  Evidence: `bun.lock`; a probe file `export const probe: any = 1;` makes `bun run lint` exit 1 with `typescript(no-explicit-any)`, and removing it makes the lint pass again (2026-10-29).
 
 
 ## Decision Log
@@ -109,19 +121,46 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
   - サポートイベント rewards. Which events have happened is not visible, and the wiki reports an unseen event can still occur in 本戦 only at a low rate.
   Date/Author: 2026-10-28, agent.
 
+- Decision G16: Until open item O5 is answered, a memory below 親愛度 Lv37 uses its own level for the two lessons. Every later スター性 gain (each ワッペン fire, round 1 and round 2) uses Lv36, or the memory's level if higher. Lv36 and Lv37 both give +50%, so every gain after the lessons gets +50% whatever the memory's level. "36 after winning" is read as winning round 1.
+  Rationale: The level rises during 本戦 (34 after day 6, 35 after the recovery event before round 1, 36 after winning round 1), but it is not known which rise comes before which gain. A ワッペン fire can also come from a card bought at the インターバル, after the last rise. An upper bound must never come out below what the memory can reach, so every uncertain gain takes the highest level that can be in force. Once O5 is answered, change `LATE_AFFECTION_FLOOR` and its use in `src/engine/star.ts`; the Lv37 results do not move.
+  Date/Author: 2026-10-29, agent.
+
+- Decision G17: `requiredTotal` never goes below 0. A rank that the capped rounds and the final スター性 reach on their own needs a total of 0; for example rank A (10000) at スター性 1335.
+  Rationale: A negative required total means nothing to the player. The margin is then simply the best total.
+  Date/Author: 2026-10-29, agent.
+
+- Decision G18: Every multiplication the engine floors is done in integers. A lesson gain is floor(base × (1000 + bonus‰) / 1000), a スター性 gain is floor(base × (100 + bonus%) / 100), and floor(スター性 × 7.5) is computed as floor(スター性 × 15 / 2).
+  Rationale: Floating-point floors give wrong answers for real inputs (`Surprises & Discoveries`). Integer arithmetic gives the exact value the game's floor needs. Whether the game floors at all is still open item O4.
+  Limit: JavaScript numbers hold integers exactly only up to 2^53 (about 9 × 10^15). Every product here stays below 10^7 for game values (parameters up to 3200, スター性 up to about 1400, ratings up to 35000), so the engine adds no range guard. A Codex review on 2026-10-29 showed `requiredTotal` going wrong for inputs near 10^15. That is outside any game value, so it was answered with this note rather than with a code change.
+  Date/Author: 2026-10-29, agent.
+
+- Decision G19: Milestone 1 adopts only the `test`, `type-check` and `lint` scripts and the tools they run. The `dev`, `build` and `preview` scripts, Vite, Preact and the tsconfig JSX settings come in Milestone 4, the first milestone that uses them. This revises the first draft's Milestone 1 list, which also copied `dev` and `build`.
+  Rationale: Before the page exists, a `dev` script would have nothing to serve, and the dependencies would be installed with nothing importing them.
+  Date/Author: 2026-10-29, agent.
+
+- Decision G20: Each milestone is one issue on the board `tia-tools` project 1, on its own branch from `develop`. The pull request that merges the branch into `develop` closes the issue. Milestone 1 is #4. Progress, decisions and discoveries stay in this plan, not on the issue.
+  Rationale: The project's `task-board` workflow sizes an issue to one branch, and only the branch holding the claim may close it. This plan already gives each milestone its own branch.
+  Date/Author: 2026-10-29, agent.
+
 
 ## Outcomes & Retrospective
 
-Nothing implemented yet.
+Milestone 1 (2026-10-29) delivered the arithmetic that needs no card data, in `src/engine/`. The DMM sample's figures in `Artifacts and Notes` now come from code, not only from hand arithmetic: best final スター性 1335, S5 needs 7044, schedule-only best total 6410. A memory at スター性 760 needs 7232. Two things are still provisional. Results below 親愛度 Lv37 use the interim reading of decision G16 until O5 is answered, and lesson gains are floored until O4 confirms the game floors. One lesson from this milestone: a floor over a floating-point product is wrong on ordinary inputs (120 at +2.5%), so every floored product in the remaining milestones must be computed in integers as well (decision G18).
 
 
 ## Context and Orientation
 
-This repository is new. At the time of writing it holds only the scaffold:
+This repository is new. It holds the scaffold:
 - `CLAUDE.md`, the project snapshot for coding agents;
 - `docs/PLANS.md`, the ExecPlan method this plan follows;
 - `docs/adr/README.md`, how durable decisions are recorded, and ADR 0001;
 - this plan.
+
+Since Milestone 1 it also holds the toolchain and the first engine modules:
+- `package.json` and `bun.lock`: the scripts `test`, `type-check` and `lint` with their tools, TypeScript 7, Oxlint and oxlint-tsgolint;
+- `tsconfig.json`;
+- `oxlint.config.ts`, the lint rules, adopted from the sibling on 2026-10-29;
+- `src/engine/types.ts`, `rating.ts`, `star.ts` and `schedule.ts`, each with a co-located `*.test.ts`. `Interfaces and Dependencies` lists what each exports.
 
 The user keeps sample screenshots in `temp/`, untracked; see open item O2 before committing any of them.
 
@@ -213,16 +252,17 @@ Prior art for reading screenshots: gakumas-tools reads a different memory screen
 The work runs in six milestones. The first three are pure TypeScript with no DOM, tested with `bun test`. The fourth adds the page and its Worker. The fifth adds screenshot reading, and can be prototyped in parallel (in a separate git worktree) once Milestone 4's form exists. The sixth deploys. Before writing TypeScript, read the user-level stack note `~/.claude/docs/typescript.md`, and copy the toolchain from the sibling rather than inventing one (the `adopt-from-sibling` skill): Bun, Vite, Preact, TypeScript 7, and Oxlint with the sibling's rule set.
 
 Milestone 1 sets up the toolchain and the arithmetic that needs no card data.
-- The sibling's `package.json` scripts (`dev`, `build`, `type-check`, `lint`), `tsconfig.json` and `oxlint.config.ts` are copied in, so `bun test`, `bun run type-check` and `bun run lint` run green on an empty `src/`.
-- `src/engine/rating.ts` exports the rank table, `rating(params, star, r1Rating, r2Rating)`, and `requiredTotal(rankRating, finalStar)`: the smallest integer P meeting G2's inequality.
+- The sibling's `package.json` scripts `test`, `type-check` and `lint`, its `tsconfig.json` and its `oxlint.config.ts` are copied in, with only the tools those scripts run (decision G19). The type check and the tests pass only once `src/` holds a module and a test (`Surprises & Discoveries`).
+- `src/engine/rating.ts` exports the rank table, `rating(params, star, r1Rating, r2Rating)`, and `requiredTotal(rankRating, finalStar)`: the smallest integer P meeting G2's inequality, never below 0 (G17).
 - `src/engine/star.ts` exports `bestFinalStar({ star, affection, wappenLeft })`:
   - It adds floor(30 × m) and floor(10 × m) for the lessons, floor(10 × m) per remaining ワッペン fire and floor(120 × m) for round 1, then caps at 1110.
-  - It then adds floor(150 × m) for round 2. Here m = 1 + the 親愛度 bonus.
-  - For 親愛度 below 37, the level rises during 本戦: 34 after day 6, 35 after the recovery event before round 1, 36 after winning. Use the level in force at each gain and note this in `Surprises & Discoveries`. Only the 37 case is confirmed by the 1335 figure.
+  - It then adds floor(150 × m) for round 2. Here m = 1 + the 親愛度 bonus, applied in integers (G18).
+  - For 親愛度 below 37, the level rises during 本戦: 34 after day 6, 35 after the recovery event before round 1, 36 after winning round 1. Which rise comes before which gain is open item O5. Until it is answered, the lessons use the memory's level and every later gain uses Lv36 or above (G16). Only the 37 case is confirmed by the 1335 figure.
 - `src/engine/schedule.ts` exports `bestScheduleGain(memory, cap)`:
-  - It tries every placement of the two lessons (3 × 3), the two 授業 (3 × 3) and each lesson's サブ stat (2 × 2), and keeps the highest total.
-  - Each lesson gain is floor(base × (1 + bonus)); see open item O4.
+  - It tries every placement of the two lessons (3 × 3), the two 授業 (3 × 3) and each lesson's サブ stat (2 × 2), 324 in all, and keeps the highest total. On a tie it keeps the first placement, trying the stats in the order Vo, Da, Vi.
+  - Each lesson gain is floor(base × (1 + bonus)), computed in integers (G18); see open item O4.
   - Each stat is capped at the end (all gains are positive, so capping once at the end equals capping at each gain).
+  - `PLACEMENTS` and `applySchedule(memory, placement, cap)` are exported, so Milestone 3 can score every placement with the abilities added.
 - The milestone ends when the tests below pass and print the expected numbers.
 
 Milestone 2 makes the sibling's card data available here.
@@ -304,7 +344,21 @@ Milestone 1, after copying the toolchain:
     bun run type-check
     bun run lint
 
-Expected: all tests pass, and the type check and lint print nothing. The tests to write first, each shown failing before its code exists:
+Expected: all tests pass, and the type check and lint print nothing beyond the command line and exit 0. On 2026-10-29 the output was:
+
+    $ bun test
+     30 pass
+     0 fail
+     136 expect() calls
+    Ran 30 tests across 3 files.
+    $ bun run type-check
+    $ tsc --noEmit
+    $ bun run lint
+    $ oxlint --deny-warnings
+
+If `bun install` hangs at "Resolving dependencies", run it with `BUN_INSTALL_CACHE_DIR` set to an empty directory. Under the Claude Code sandbox, set it to a directory under `$TMPDIR` anyway, because the sandbox cannot write Bun's global cache in `~/.bun`.
+
+The tests to write first, each shown failing before its code exists:
 - `requiredTotal(35000, 1335) === 7044`
 - `requiredTotal(30000, 1335) === 4544`
 - `bestFinalStar({ star: 810, affection: 37, wappenLeft: 4 }) === 1335`
@@ -362,10 +416,51 @@ Their 本戦-relevant abilities, from the sibling's data:
 
 A rough total is 6410 + about 370, short of 7044. Milestone 3 replaces this estimate with the exact figure.
 
+Milestone 1's tests were each seen to fail before the code existed, as missing modules. Each guard was then checked another way: it was broken on purpose, `bun test` ran, and the file was restored. Results, 2026-10-29:
+
+    1110 cap removed                         RED   caps at 1110 before round 2, not after
+    スター性 floor in floating point            RED   100 at +15% is 115
+    later gains at the memory's own level    RED   below Lv37 … (O5)
+    ワッペン limit raised to 99                RED   refuses a ワッペン count outside its 20 fires
+    lesson floor in floating point           RED   120 at 2.5% is 123
+    Da not capped                            RED   3 tests (near the cap, at the cap, lower cap)
+    ties keep the last placement             RED   DMM sample's schedule-only best total
+    サブ allowed on the main stat              RED   3 tests (324 placements, サブ ≠ main, DMM)
+    requiredTotal not clamped at 0           RED   is 0, never negative
+    requiredTotal floor instead of ceil      RED   4 tests (1285 → 7232, 1334 → 7048, …)
+    floor(スター性 × 7.5) dropped               RED   2 rating tests
+    requiredTotal round instead of ceil      green: an equivalent change. The value halved is an integer, so the result is whole or ends in .5, where Math.round and Math.ceil agree
+
 
 ## Interfaces and Dependencies
 
 Runtime: Preact for the page; no OCR library and no ML runtime (Milestone 5 matches templates and pixels itself). Build and test: Bun, Vite, TypeScript 7, Oxlint (the sibling's configuration, per its ADR 0007). Hosting: a Cloudflare Worker with an R2 binding to `tia-assets` (read-only by code) under the tia-tools account.
+
+Milestone 1 built these, in `src/engine/`:
+
+    // types.ts
+    export type Stat = "vocal" | "dance" | "visual";
+    export const STATS: readonly Stat[];                 // Vo, Da, Vi: the order every search tries
+    export interface Memory { params; bonusPermil; star; affection }   // as below
+    export function sumStats(values: Record<Stat, number>): number;
+    // rating.ts
+    export interface Rank { rank: string; rating: number }
+    export const RANKS: readonly Rank[];                 // G10, S5 first
+    export const R1_RATING_CAP = 5500, R2_RATING_CAP = 7400;
+    export function rating(params: Record<Stat, number>, star: number, r1Rating: number, r2Rating: number): number;
+    export function requiredTotal(rankRating: number, finalStar: number): number;
+    // star.ts
+    export function affectionBonusPercent(level: number): number;    // RangeError outside integer 28–37
+    export function boostedStar(base: number, level: number): number;
+    export function bestFinalStar(input: { star: number; affection: number; wappenLeft: number }): number;   // RangeError unless wappenLeft is an integer 0–20
+    // schedule.ts
+    export interface LessonPlacement { main: Stat; sub: Stat }
+    export interface Placement { lessons: readonly [LessonPlacement, LessonPlacement]; classes: readonly [Stat, Stat] }
+    export interface ScheduleResult { placement: Placement; params: Record<Stat, number>; total: number }
+    export const PLACEMENTS: readonly Placement[];       // all 324
+    export function lessonGain(base: number, bonusPermil: number): number;
+    export function applySchedule(memory: Memory, placement: Placement, cap: number): Record<Stat, number>;
+    export function bestScheduleGain(memory: Memory, cap: number): ScheduleResult;
 
 At the end of Milestone 3 these must exist:
 
@@ -395,8 +490,14 @@ Open items, carried until answered:
 - O2: whether the samples may be committed as fixtures (they show the user's deck and idol, nothing else personal), or must be cropped or kept local.
 - O3: the subdomain.
 - O4: whether the game floors, rounds or ceils base × (1 + bonus). Settle it with one in-game lesson result before trusting margins of a point or two.
-- O5: the 親愛度 level in force at each 本戦 スター性 gain below Lv37.
+- O5: the 親愛度 level in force at each 本戦 スター性 gain below Lv37. Until it is answered, decision G16's upper-bound reading applies.
 - O6: whether any trigger names a scenario token that separates 選抜 (produce-007) from 本戦 (produce-008). The sibling's `count.ts` treats a trigger of another scenario as 0.
 
 
 Revision note (2026-10-28): first draft, written at the end of the design interview from its scratch log; decisions G1–G13 are the user's or follow from them as marked, G14–G15 are the agent's and open to revision.
+
+Revision note (2026-10-29): Milestone 1 implemented. Changes:
+- Added decisions G16–G20: the interim 親愛度 reading, the 0 floor on the required total, integer arithmetic, the narrowed toolchain, and one board issue per milestone.
+- Added three discoveries (floating-point floors, the empty-`src/` checks, newer tool versions), the Milestone 1 outcome and the mutation record.
+- Recorded the modules' actual exports.
+- Revised Milestone 1's text to match what was built.
