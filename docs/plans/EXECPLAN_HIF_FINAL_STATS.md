@@ -108,6 +108,9 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - Observation: The iPhone SE 3 基本情報 sample is scrolled. The panel has slid under the idol image, which hides 親愛度 and the stat labels but not the stat digits. The panel's visible top there is 128.6 units above the 「カスタム」 label, against 308 unscrolled.
   Evidence: `src/reader/fixtures/iphone-se3-01-kihon.png`; `locate` in `src/reader/layout.ts`.
 
+- Observation: A tile's zoom reaches past the 1.6 that the first research tried: the iPhone 15 Pro Max 03 sample's first tile, csprt-3-0042, fits best at 1.8. Once zooms run to 2 and the best few candidates are refined with finer zoom and offset steps, every tile of the six samples matches its own card with a clear lead: the runner-up's difference is at least 8.4 times the winner's. The thin DMM margins of the first research (csprt-3-0062 at 1243 against 1632) came from a coarse offset grid. Matching takes about 0.4 s a screenshot under Bun.
+  Evidence: `src/reader/cards.ts` over the six 編成 samples with the 206 local thumbnails, 2026-10-29. Each tile was also checked by eye beside its matched thumbnail.
+
 - Observation: The P-item icons are 90.7 units apart, not 90. The digit badges first suggested 89.7, because their grey merges with icon art. Measured on the icons' frames, the pitch is the same on all six samples.
   Evidence: the frames' left edges at −1.1, 89.3, 180.8, 271.3, 361.7, 452.7 and 543.1 units on the iPhone 15 Pro Max samples, and 0, 90, 181, 272, 362, 453 and 544 on DMM.
 
@@ -295,6 +298,14 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
   - **相談リフレッシュ:** the third of three text lines 30 units apart under the effects, or under 除去済みスキルカード when the run deleted cards, so it is found wherever that section pushes it.
   Rationale: Each rule was measured on all six samples before it was written down, and the numbers are in `Surprises & Discoveries`. Templates from the other memories read every sample glyph (`src/reader/templates.test.ts`), the evidence that they carry over to a memory they were not cut from.
   Date/Author: 2026-10-29, agent.
+
+- Decision G36: The reader's tests use a snapshot of the sibling's images: all 210 card thumbnails (`w192/`, 1.4 MB) and the 54 icons of items that cards grant (`w48/`, 216 KB), in `src/reader/fixtures/w192/` and `w48/`. They were downloaded from the sibling's site on 2026-10-29, and the 256 that the sibling's local library also holds are byte-identical to it. The page itself still reads them live from `tia-assets` through the Worker (ADR 0001, whose update of the same day records this test-only snapshot). Refresh the snapshot together with the card data's fixture (G22).
+  Rationale: A test of card matching is worth little unless every card the tile could be confused with is a candidate, and CI has no access to the bucket. This follows G22, which snapshots the card file for the same reason. The user chose this over tests that read the sibling's checkout and skip without it.
+  Date/Author: 2026-10-29, user.
+
+- Decision G37: The カスタム item's layer art (G33) is extracted here, once, with the GkmasObjectManager checkout that gakumas-supportcards' image pipeline vendors. Only small templates derived from it are committed, the way the glyph templates are, and the page uses those at runtime. The layer art itself is not in `tia-assets`, since the sibling extracts only items that cards grant.
+  Rationale: The reader needs only to tell the characters and the accessories apart, which small templates do. This avoids work in the sibling's pipeline and a new prefix in the bucket. The user chose it over having the sibling upload the layers to R2.
+  Date/Author: 2026-10-29, user.
 
 
 ## Outcomes & Retrospective
