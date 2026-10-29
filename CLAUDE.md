@@ -22,7 +22,7 @@ When writing complex features or significant refactors, use an ExecPlan (as desc
 
 Cross-plan decisions live in `docs/adr/` (convention: `docs/adr/README.md`). This list is an index, not a home — one line per active decision with a pointer to its ADR; full context, provenance, and lifecycle live in the ADR file. Every non-obvious claim elsewhere in this file must cite its source (`per docs/adr/NNNN` or `per docs/plans/<plan>.md`) so this snapshot stays auditable and rebuildable. When an ADR corrects something an old plan asserted, the ADR wins.
 
-- `docs/adr/0001-card-data-and-art-are-shared-with-gakumas-supportcards-at-runtime.md` — **accepted** (not implemented yet): support card data comes from a versioned JSON file the sibling gakumas-supportcards publishes, and card art and item icons from its R2 bucket `tia-assets`, which this app's Worker only reads; nothing is copied into this repository.
+- `docs/adr/0001-card-data-and-art-are-shared-with-gakumas-supportcards-at-runtime.md` — **accepted** (data part implemented, art not yet): support card data comes from a versioned JSON file the sibling gakumas-supportcards publishes, and card art and item icons from its R2 bucket `tia-assets`, which this app's Worker only reads; nothing is copied into this repository.
 
 ## Project Overview
 
@@ -36,7 +36,14 @@ A static web page for 学園アイドルマスター players of the H.I.F. scena
 - `schedule.ts`: the 324 placements of the 本戦 lessons and 授業, and the best total from the schedule alone;
 - `types.ts`: the shared `Stat` and `Memory` types.
 
-Every floored product is computed in integers, because floating point floors 120 at +2.5% to 122 instead of 123 (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decision G18). Card data, the page, its Worker and the screenshot reader come in later milestones of that plan.
+Every floored product is computed in integers, because floating point floors 120 at +2.5% to 122 instead of 123 (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decision G18).
+
+`src/data/` reads the card data gakumas-supportcards publishes as `/data/cards.v1.json` (per `docs/adr/0001`):
+- `contract.ts`: the file's types, copied from the sibling's `src/engine/types.ts`. Never edit them on their own; a change there bumps the file's format version and name (the sibling's ADR 0010), and the new shapes are copied here then.
+- `load.ts`: `parseCardData` checks the whole file against the contract. One bad value or an empty card list refuses the file, with the path named; fields the contract does not name are dropped (per the plan, decision G23).
+- `fixtures/cards.v1.json`: the sibling's real file, used by the tests. The plan's § Concrete Steps says how to refresh it (decision G22).
+
+The page, its Worker and the screenshot reader come in later milestones of that plan.
 
 ## Setup and Development
 
