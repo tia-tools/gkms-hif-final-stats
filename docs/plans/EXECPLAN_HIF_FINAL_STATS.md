@@ -52,6 +52,20 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
   - **Deploy:** `deploy.yml`'s run on that merge passed every gate and its deploy step in 43 s. Its one annotation is GitHub's notice that `ubuntu-latest` moves to Ubuntu 26.
   - **Verify:** every check in `infra/worker/README.md` § Verify passes on `https://gmks-hif-final-stats.tia.run`, and its `/data/cards.json` is byte-identical to `src/data/fixtures/cards.v1.json`.
   - **Acceptance:** dropped into the live page in Chrome, the DMM pair reads 6971, S5 short by 73, with no field ringed and all 21 images loaded, the same as `bun run dev`. This is Milestone 6's acceptance.
+- [x] (2026-10-29 15:57Z) The plan's acceptance (`Validation and Acceptance`), checked on the live page in Chrome. Every pair's values are the ones `src/test-support/samples.ts` records, and no image failed to load.
+
+  | Pair | Total | S5 needs | Margin | Ringed |
+  |---|---|---|---|---|
+  | DMM 01 | 6971 | 7044 | −73 | none |
+  | iPhone 15 Pro Max 01 | 6971 | 7044 | −73 | none |
+  | iPhone 15 Pro Max 02 | 5973 | 7100 | −1127 | none |
+  | iPhone 15 Pro Max 03 | 6106 | 7044 | −938 | none |
+  | iPhone 16e 01 | 6514 | 7085 | −571 | none |
+  | iPhone SE 3 01 | 6407 | 7044 | −637 | 親愛度, which its screenshot hides |
+
+  - **スター性:** the 15 Pro Max 02 pair reaches only 1320 and the 16e pair 1324, so their S5 needs 7100 and 7085, above 7044.
+  - **「暫定」:** the published card file holds no held card today, so no deck can show it on the live page. It was checked in `bun run dev` instead, reading a scratch copy of the fixture with s_card-3-0066 held, the case `src/engine/total.test.ts` uses. The DMM pair's S5 line read −73 暫定, and S4+ had no mark. The panel listed two 「未計上」 entries. 暫定 stayed with one entry filled and went with both at 0, the margin still −73. No component test pins this yet (#24).
+- [x] (2026-10-29 15:57Z) Plan complete, closed out. ADR 0002 records the reader's approach; ADR 0001 gained its Milestone 6 update; `CLAUDE.md` is synced. The plan's open items are on the board: #19 (O1, 選抜 counts), #20 (O4), #21 (O5), #22 (O6), #23 (the カスタム colour), #13 (メダルもじゃ's P-drinks) and #24 (a component test for 暫定). From here the plan is history: corrections go to ADRs and `CLAUDE.md`.
 
 
 ## Surprises & Discoveries
@@ -408,6 +422,20 @@ It uses no OCR and no model: anchors, Otsu thresholds, templates cut from the sa
 Milestone 4 (2026-10-29) put the bound on a page. Entered by hand at `http://localhost:5173`, the DMM sample reads 6971 and S5 short by 73, the same as Milestone 3. Each count can be changed in the folded panel, and the URL carries the whole form. The Worker is written and tested but not deployed; that is Milestone 6. One lesson: component tests in happy-dom passed while a real browser showed two plain usability bugs, a focus that never came and a width that never applied. A walkthrough of the real page caught both, and each is now pinned by a test.
 
 Milestone 6 (2026-10-29) put the page live at `https://gmks-hif-final-stats.tia.run`. One Worker serves the built page, the sibling's thumbnails and icons from `tia-assets`, and its card file. `check.yml` gates every pull request into `develop`. A release into `main` runs the same gates again in `deploy.yml`, which then deploys. Dropped into the live page, the DMM pair reads 6971, S5 short by 73, as it does in `bun run dev`. One lesson: the deploy guidance adopted from the sibling's README called the route permission Workers Routes: Edit, where Cloudflare's is Write, and missed that Workers Editor cannot create a Worker. Adopted documentation needs the same check against the provider's own pages as adopted code gets from its tests. Here, the Codex review caught both.
+
+The plan as a whole (2026-10-29) is accepted. A player can open `https://gmks-hif-final-stats.tia.run`, drop a memory's two screenshots, and read for every rank from S5 down whether the memory's best case reaches it, and by how much. On the live page all six sample pairs fill the form. Only one field is ringed in all six: the SE3 pair's 親愛度, which its screenshot hides. The DMM pair needs no correction and agrees with Milestone 3's hand-checked breakdown, 6971 and S5 short by 73.
+
+What remains is on the board:
+- 選抜's counts are still decision G27's stopgap (#19).
+- Two facts about the game are open: whether it floors lesson gains (#20), and the 親愛度 level at each gain below Lv37 (#21).
+- No trigger is restricted to 選抜 or 本戦 today (#22).
+- The カスタム item's pouch colour is assumed 黄, and some layers no sample shows (#23). The 黄 メダルもじゃ's 2 P-drinks are not counted (#13).
+- No component test pins 「暫定」 (#24).
+- Tablets are refused until samples exist (ADR 0002).
+
+Two lessons span the milestones:
+- **One number, fixed by hand first:** the DMM breakdown was worked by hand before `bestTotal` ran, and the user checked it line by line. Every later milestone then checked against one number, 6971: by hand entry, by screenshot, and live.
+- **Fixing classes, not sites:** the Codex reviews on fresh snapshots kept finding faults until fixes addressed a whole class rather than one site. Examples are values checked only for their shape, and a confidence with no absolute fit. Milestone 5 took six rounds, ending in LGTM.
 
 
 ## Context and Orientation
@@ -972,3 +1000,5 @@ Revision note (2026-10-29, Milestone 6 started): Milestone 5 merged (#14). The s
 Revision note (2026-10-29, Milestone 6 built): the Worker's `wrangler.toml`, the check and deploy workflows, their tests and the Worker's README. Added decision G39 (the deployment) and the steps. The deployment itself waits for the repository secrets and a first deploy.
 
 Revision note (2026-10-29, Milestone 6 deployed): Milestone 6 merged (#16), the user did the one-time setup, and the release #17 merged into `main` and deployed. Progress records the deploy run, the live checks and the DMM pair read on the live page. Outcomes records Milestone 6's outcome.
+
+Revision note (2026-10-29, closed out): the plan's acceptance checked on the live page, with every sample pair, the スター性 case and 「暫定」. Added the plan-wide outcome, and the stamp that closes the plan. Its open items moved to the board (#19–#24, with #13). ADR 0002 and ADR 0001's update carry its durable decisions. This is the plan's last edit.

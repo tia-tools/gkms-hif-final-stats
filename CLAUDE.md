@@ -18,11 +18,14 @@ Every document should be self-sufficient: the reader should never need to hunt f
 
 When writing complex features or significant refactors, use an ExecPlan (as described in `docs/PLANS.md`) from design to implementation. ExecPlans are the persistence layer for cross-session development — they carry forward all context, decisions, and progress so that a fresh session can continue the work without loss. Completed plans are immutable history; when one finishes, run the close-out ritual (`close-out` skill) to extract its durable decisions before moving on.
 
+- `docs/plans/EXECPLAN_HIF_FINAL_STATS.md` — **complete** (2026-10-29): the page is live at `https://gmks-hif-final-stats.tia.run` and reads all six sample pairs right there, the DMM pair as 6971, S5 short by 73 (its Progress, the last two entries). Its open items are issues on the board: #13 and #19–#24.
+
 ## Durable Decisions (ADRs)
 
 Cross-plan decisions live in `docs/adr/` (convention: `docs/adr/README.md`). This list is an index, not a home — one line per active decision with a pointer to its ADR; full context, provenance, and lifecycle live in the ADR file. Every non-obvious claim elsewhere in this file must cite its source (`per docs/adr/NNNN` or `per docs/plans/<plan>.md`) so this snapshot stays auditable and rebuildable. When an ADR corrects something an old plan asserted, the ADR wins.
 
-- `docs/adr/0001-card-data-and-art-are-shared-with-gakumas-supportcards-at-runtime.md` — **accepted** (data part implemented, art not yet): support card data comes from a versioned JSON file the sibling gakumas-supportcards publishes, and card art and item icons from its R2 bucket `tia-assets`, which this app's Worker only reads; nothing is copied into this repository.
+- `docs/adr/0001-card-data-and-art-are-shared-with-gakumas-supportcards-at-runtime.md` — **accepted**, implemented and live since 2026-10-29: support card data comes from a versioned JSON file the sibling gakumas-supportcards publishes, and card art and item icons from its R2 bucket `tia-assets`, which this app's Worker only reads; nothing is copied into this repository. The committed copies are read only by the tests, and the card file also by the dev server when it finds no sibling build.
+- `docs/adr/0002-screenshots-are-read-by-measured-layout-and-templates-with-no-ocr-and-no-model.md` — **accepted**: the reader measures each field from one anchor per screenshot and matches pixels against templates (glyphs cut from the samples, the sibling's images, the カスタム layers). It uses no OCR and no model, and refuses a layout it was not measured on.
 
 ## Project Overview
 
@@ -51,7 +54,7 @@ Every floored product is computed in integers, because floating point floors 120
 
 `src/app/` is the page (Preact, Tailwind 4): pure modules (`form.ts` holds the form and its URL round trip, `compute.ts`, `panel.ts`, `items.ts`, `picker.ts`, `fields.ts`, `cap.ts`, `labels.ts`), and components laid out as the game's own tabs (per the plan, decisions G26 and G30). `infra/worker/` is its Cloudflare Worker: `/img/*` from the R2 bucket `tia-assets`, read only, and `/data/cards.json` proxied from gakumas-supportcards (decisions G14, G31); `vite.config.ts` answers the same routes in the dev server from the sibling's local files or the fixture, and a missing image with 404. `infra/worker/wrangler.toml` deploys the Worker on `gmks-hif-final-stats.tia.run` (G34, G39).
 
-`src/reader/` reads the two screenshots into values with confidences, in pure functions over a `Raster` (the shape of the browser's `ImageData`); no OCR and no model (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decision G35):
+`src/reader/` reads the two screenshots into values with confidences, in pure functions over a `Raster` (the shape of the browser's `ImageData`); no OCR and no model (per `docs/adr/0002`; `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decision G35):
 - `layout.ts` finds each tab's anchor (the 「カスタム」 label, the 「SP」 badge) and measures everything from it in units of width / 720; a field the idol image hides reads as null;
 - `glyphs.ts`, `digits.ts`, `fonts.ts` and `templates.ts` read the numbers against glyph templates cut from the samples; `kihon.ts` and `hensei.ts` say where each field sits;
 - `cards.ts` ranks every card's thumbnail against a tile, `items.ts` matches the サポート P-items' icons, and `custom.ts` reads the カスタム item's character and accessory for メダルもじゃ (decisions G33, G37);
