@@ -47,7 +47,7 @@ export default defineConfig({
     {
       // Tests group many cases under one describe; 120 lines, as in the sibling. Remove when no test
       // function needs more than 60.
-      files: ["**/*.test.ts"],
+      files: ["**/*.test.ts", "**/*.test.tsx"],
       rules: { "max-lines-per-function": ["error", { max: 120, skipBlankLines: true, skipComments: true }] },
     },
     {
