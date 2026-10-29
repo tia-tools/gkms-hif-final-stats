@@ -207,10 +207,10 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
 
 - Decision G28: Smaller choices made while building Milestone 3, each visible and adjustable in the panel where it sets a count:
   - A held P-item's fires left are the digit on its icon. If a capped item has no digit read, its cap is used. An item's effects and its P-drinks share one fires-left value, and one panel entry.
-  - ワッペン fires as often as skill cards are acquired, up to its remaining fires. Lowering the acquisitions in the panel therefore lowers スター性 and raises every rank's required total.
+  - ワッペン fires as often as skill cards are acquired, up to its remaining fires. Lowering the acquisitions in the panel therefore lowers スター性 and raises every rank's required total. A ワッペン held without a digit read counts its full 20 fires per run, like any capped item.
   - A trigger restricted to a scenario fires only if that scenario is H.I.F. (the sibling's id `hif`). No trigger in today's data is restricted (O6).
   - A day-3 おでかけ is counted like 差し入れ, with the same 1 card and 1 P-drink; only the 差し入れ and おでかけ triggers differ. On a tie, 差し入れ wins, as the user usually chooses it.
-  - Each reason a held deck card gives (G12) is one 「未計上」 entry, with the player's points on the stat they choose. 「暫定」 stays until every reason has a value, 0 included. The reasons cannot tell an effect left out of the card from one kept in it and counted here (`Surprises & Discoveries`). So every reason is listed, and the player enters 0 for one whose effect is already counted. A first version took one entry per card, on one stat. The Codex review of 2026-10-29 found that a card with uncounted abilities on two stats would then lose points to one stat's cap, putting the bound too low.
+  - Each reason a held deck card gives (G12) is one 「未計上」 entry, with the player's points on the stat they choose. 「暫定」 stays until every reason has a value, 0 included. The reasons cannot tell an effect left out of the card from one kept in it and counted here (`Surprises & Discoveries`). So every reason is listed, and the player enters 0 for one whose effect is already counted. A held card whose reason list is empty still gets one entry. A first version took one entry per card, on one stat. The Codex review of 2026-10-29 found that a card with uncounted abilities on two stats would then lose points to one stat's cap, putting the bound too low.
   - An unknown card id refuses the computation rather than dropping the card, because dropping it would lower the bound silently.
   Date/Author: 2026-10-29, agent.
 
@@ -561,7 +561,7 @@ Milestone 3's guards, each broken in turn under `bun test src/engine` (2026-10-2
 - In the abilities: the パラメータボーナス+ exclusion, which first survived because every bonus effect in today's data is on プロデュース開始, and so gained its own test; unheld items, 選抜 use and ワッペン's need.
 - In `bestTotal`: panel occasions, item drinks, ワッペン limited by acquisitions, the 「暫定」 mark, the tie order, manual points and the day-3 override.
 
-After the Codex review moved the 「未計上」 entries from one per card to one per reason, two shortcuts were put back one at a time, and both went red: 「暫定」 judged by a card's first reason only, and only a card's first entry counted.
+After the Codex review moved the 「未計上」 entries from one per card to one per reason, two shortcuts were put back one at a time, and both went red: 「暫定」 judged by a card's first reason only, and only a card's first entry counted. The second review found two more cases, and both fixes went red when undone: a held card with an empty reason list counted as settled, and a ワッペン without a digit counted 0 fires.
 
 
 ## Interfaces and Dependencies
@@ -683,3 +683,5 @@ Revision note (2026-10-29, Milestone 3 built): Milestone 3's code is in place. C
 - Its acceptance, the user's line-by-line check, is still open.
 
 Revision note (2026-10-29, Codex review of Milestone 3): G28's 「未計上」 bullet now gives one entry per reason, each on its own stat, after the review found the per-card entry could put the bound too low. The `HeldItem` and `PanelState` lines in Interfaces now match the code.
+
+Revision note (2026-10-29, second Codex review of Milestone 3): two edge cases added to G28. A ワッペン without a digit counts its 20 fires, and a held card with an empty reason list still gets one 「未計上」 entry.
