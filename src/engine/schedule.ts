@@ -57,17 +57,28 @@ function addLesson(
   params[lesson.sub] += lessonGain(gains.sub, bonusPermil[lesson.sub]);
 }
 
-/**
- * Each stat after the placement, capped once at the end: every gain is positive, so that equals
- * capping at each gain.
- */
-export function applySchedule(memory: Memory, placement: Placement, cap: number): Record<Stat, number> {
-  const params = { ...memory.params };
+/** What the placement's lessons and 授業 add to each stat, before the cap. */
+export function scheduleGains(memory: Memory, placement: Placement): Record<Stat, number> {
+  const gains = { vocal: 0, dance: 0, visual: 0 };
   const [day2, day5] = placement.lessons;
-  addLesson(params, memory.bonusPermil, day2, DAY_2_LESSON);
-  addLesson(params, memory.bonusPermil, day5, DAY_5_LESSON);
-  for (const stat of placement.classes) params[stat] += CLASS_GAIN;
-  return { vocal: Math.min(cap, params.vocal), dance: Math.min(cap, params.dance), visual: Math.min(cap, params.visual) };
+  addLesson(gains, memory.bonusPermil, day2, DAY_2_LESSON);
+  addLesson(gains, memory.bonusPermil, day5, DAY_5_LESSON);
+  for (const stat of placement.classes) gains[stat] += CLASS_GAIN;
+  return gains;
+}
+
+/** Each stat plus its gains, capped once at the end: every gain is positive, so that equals capping at each gain. */
+export function capped(params: Record<Stat, number>, gains: Record<Stat, number>, cap: number): Record<Stat, number> {
+  return {
+    vocal: Math.min(cap, params.vocal + gains.vocal),
+    dance: Math.min(cap, params.dance + gains.dance),
+    visual: Math.min(cap, params.visual + gains.visual),
+  };
+}
+
+/** Each stat after the placement, capped. */
+export function applySchedule(memory: Memory, placement: Placement, cap: number): Record<Stat, number> {
+  return capped(memory.params, scheduleGains(memory, placement), cap);
 }
 
 /** The placement with the highest capped total; on a tie, the first in PLACEMENTS order. */
