@@ -24,7 +24,7 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [ ] Open item O3: choose the tia.run subdomain. Needed by Milestone 6.
 - [x] (2026-10-29 01:10Z) Milestone 1: toolchain, rating arithmetic, スター性 bound, schedule-only bound. Issue #4, branch `feature/m1-rating-schedule`: `bun test` 30 pass, type-check and lint clean, every guard seen red by mutation (`Artifacts and Notes`).
 - [x] (2026-10-29 02:07Z) Milestone 1 merged into `develop` by pull request #5 (merge commit 841b7be), closing #4.
-- [ ] Milestone 2 (issue #6, branch `feature/m2-card-data`), sibling half: gakumas-supportcards publishes `dist/data/cards.v1.json` through its own pull request, worked by a session in that repository (decision G21).
+- [ ] Milestone 2 (issue #6, branch `feature/m2-card-data`), sibling half: gakumas-supportcards publishes `dist/data/cards.v1.json` through its own pull request, worked by a session in that repository (decision G21). Completed: (2026-10-29) the sibling's pull request #57 (`tia-tools/gakumas-supportcards`, branch `feature/cards-v1-json`) is open into its `develop`. Remaining: the user merges it. The file goes live only after the sibling's `develop` is released into `main`, which deploys.
 - [ ] Milestone 2, this repository's half: `src/data/contract.ts`, `src/data/load.ts` and a fixture from the sibling's real output. Waits on the sibling half.
 - [ ] Milestone 3: support abilities and P-items in 本戦; the full best-case bound.
 - [ ] Milestone 4: the form page and its Worker.
@@ -57,6 +57,12 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 
 - Observation: `bun install` resolved newer versions than the sibling's lockfile, all inside the sibling's own version ranges: oxlint 1.90.0 (sibling 1.85.0), oxlint-tsgolint 7.0.2005 (7.0.2003), eslint-plugin-security 4.2.0 (4.1.0) and @types/bun 1.4.4 (1.4.2). TypeScript is 7.0.2 in both. The lint config still loads under them.
   Evidence: `bun.lock`; a probe file `export const probe: any = 1;` makes `bun run lint` exit 1 with `typescript(no-explicit-any)`, and removing it makes the lint pass again (2026-10-29).
+
+- Observation: The published card file keeps held cards in a separate top-level list, not on each card, and calls the field `reasons`, not `uncounted` as this plan first said. The top-level keys are `formatVersion`, `levelLimits`, `cards` and `held`, in that order. Each `held` entry is a `HeldCard`, `{ id, name, reasons: string[] }`. `cards` holds every card, held ones included.
+  Evidence: the sibling's pull request #57, `data/card-data-file.ts` (`CardDataFile`), and the sibling session's report of 2026-10-29. Its build printed `1` and `210` for `jq '.formatVersion, (.cards | length)'`. `held` was `[]` that day. The file is compact JSON of about 1.57 MB (45 KB gzipped).
+
+- Observation: A held card's entry in `cards` is incomplete in one of two ways, depending on why it is held. If the sibling cannot read an effect at all, that effect is left out of the card. If it can read the effect but one of its own route profiles has no number for it, the effect stays in the card. Milestone 3 must therefore not assume that every reason in `held` stands for a missing effect. An effect that stays may be countable here with the 本戦 profile. Only effects that are actually missing become 「未計上」 lines with a manual points field (decision G12).
+  Evidence: the doc comment on `held` in the sibling's `data/card-data-file.ts` (pull request #57).
 
 
 ## Decision Log
@@ -272,13 +278,14 @@ Milestone 1 sets up the toolchain and the arithmetic that needs no card data.
 
 Milestone 2 makes the sibling's card data available here.
 - In the sibling repository, on a feature branch from its `develop`:
-  - Its build writes `dist/data/cards.v1.json`, containing `formatVersion: 1`, `levelLimits`, every card from `CARDS` as generated (held cards included), and for each held card its `uncounted` reasons from `HELD`.
+  - Its build writes `dist/data/cards.v1.json`, containing `formatVersion: 1`, `levelLimits`, every card from `CARDS` as generated (held cards included), and the held cards with their reasons from `HELD`.
   - It is deterministic, with no timestamps, as the sibling's generated files are.
-  - The sibling's update workflow already deploys on every data change, so the file stays current.
+  - The sibling's update workflow deploys on every data change, so the file stays current.
   - Follow the sibling's own `CLAUDE.md` rules, add a test that the file round-trips the generated data, and open its pull request into `develop`.
+  - Done as the sibling's pull request #57. The file's actual shape is in `Surprises & Discoveries`. The sibling's `data/card-data-file.ts` writes it, and its `docs/adr/0010` sets the versioning rule: any change to the shape of the file, or of a type it carries, bumps `CARD_DATA_FORMAT_VERSION`. The file name changes with it (`cards.v2.json`), so a new format is published beside the old one.
 - In this repository:
-  - `src/data/contract.ts` copies the sibling's `Card`, `ClassifiedEffect`, `ParsedTrigger`, `ItemGrant`, `LevelLimits` and `HeldCard` types (the contract of ADR 0001).
-  - `src/data/load.ts` parses the JSON with type guards and rejects an unknown `formatVersion`. No `as T` casts: the lint rules forbid them.
+  - `src/data/contract.ts` copies the sibling's `Card`, `ClassifiedEffect`, `ParsedTrigger`, `ItemGrant`, `LevelLimits` and `HeldCard` types (the contract of ADR 0001) from its `src/engine/types.ts`. It also copies the types those carry: `Breakpoint`, `FilterRef`, `ConditionRef`, `FilterFamily` with `FILTER_FAMILIES`, `CardType`, `Rarity`, `Plan` and `EffectKind`. The sibling's `Stat` is the same union as `src/engine/types.ts`'s, so the contract reuses that one.
+  - `src/data/load.ts` parses the file `{ formatVersion, levelLimits, cards, held }` with type guards and rejects any `formatVersion` other than 1. No `as T` casts: the lint rules forbid them.
   - A test feeds it a fixture written from the sibling's real output.
 - The Worker route `/data/cards.json` (decision G14) is added in Milestone 4, where the Worker is created; until then the dev server serves a local copy.
 
@@ -508,3 +515,5 @@ Revision note (2026-10-29): Milestone 1 implemented. Changes:
 - Revised Milestone 1's text to match what was built.
 
 Revision note (2026-10-29, later): Milestone 1 merged (#5). Milestone 2 is split in Progress into the sibling's half and this repository's half. Decision G21 records that the sibling's half runs in a session in that repository.
+
+Revision note (2026-10-29, after the sibling's report): the sibling's pull request #57 is open. Two discoveries record the file's actual shape: held cards in a separate `held` list with `reasons`, and what a held card's entry leaves out. Milestone 2's text now names every type to copy and the sibling's versioning rule (its ADR 0010).
