@@ -131,6 +131,7 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
 
 - Decision G18: Every multiplication the engine floors is done in integers. A lesson gain is floor(base × (1000 + bonus‰) / 1000), a スター性 gain is floor(base × (100 + bonus%) / 100), and floor(スター性 × 7.5) is computed as floor(スター性 × 15 / 2).
   Rationale: Floating-point floors give wrong answers for real inputs (`Surprises & Discoveries`). Integer arithmetic gives the exact value the game's floor needs. Whether the game floors at all is still open item O4.
+  Limit: JavaScript numbers hold integers exactly only up to 2^53 (about 9 × 10^15). Every product here stays below 10^7 for game values (parameters up to 3200, スター性 up to about 1400, ratings up to 35000), so the engine adds no range guard. A Codex review on 2026-10-29 showed `requiredTotal` going wrong for inputs near 10^15. That is outside any game value, so it was answered with this note rather than with a code change.
   Date/Author: 2026-10-29, agent.
 
 - Decision G19: Milestone 1 adopts only the `test`, `type-check` and `lint` scripts and the tools they run. The `dev`, `build` and `preview` scripts, Vite, Preact and the tsconfig JSX settings come in Milestone 4, the first milestone that uses them. This revises the first draft's Milestone 1 list, which also copied `dev` and `build`.
