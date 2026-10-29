@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import type { Card } from "../data/contract.ts";
 import { CARD_DATA, DMM_DECK, DMM_ITEMS } from "../test-support/dmm.ts";
 import { type Ability, abilityLines, deckSources, effectsAt, itemDrinks, needs } from "./abilities.ts";
 import type { Counts } from "./count.ts";
@@ -33,6 +34,29 @@ describe("deckSources, the DMM deck", () => {
   test("leaves out サポートイベント rewards, パラメータボーナス+ and プロデュース開始 abilities (G15)", () => {
     const { abilities } = deckSources(DMM_DECK, CARDS, DMM_ITEMS, {});
     expect(abilities.some((a) => a.effect.kind === "event" || a.effect.bonus === true || a.trigger.occasion === "ProduceStart")).toBe(false);
+  });
+
+  test("leaves out パラメータボーナス+ on any trigger, which no card in today's data has", () => {
+    const card: Card = {
+      id: "s_card-x",
+      name: "x",
+      assetId: "x",
+      type: "dance",
+      rarity: "ssr",
+      plan: "common",
+      breakpoints: [
+        {
+          minLevel: 1,
+          eventBonusPermil: 0,
+          effects: [
+            { stat: "dance", value: 50, kind: "skill", bonus: true, trigger: { occasion: "EndLesson" } },
+            { stat: "dance", value: 10, kind: "skill", trigger: { occasion: "EndLesson" } },
+          ],
+        },
+      ],
+    };
+    const { abilities } = deckSources([{ cardId: "s_card-x", level: 1 }], new Map([[card.id, card]]), [], {});
+    expect(abilities.map((a) => a.effect.value)).toEqual([10]);
   });
 
   test("a P-item counts only when the memory holds it, ふわふわでもこもこ's drinks included", () => {
