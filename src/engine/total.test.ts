@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { CARD_DATA, DMM_DECK, DMM_ITEMS, DMM_MEMORY } from "../test-support/dmm.ts";
-import { bestTotal } from "./total.ts";
+import { bestTotal, uncountedKey } from "./total.ts";
 
 const dmm = (panel = {}, cap = 3200, data = CARD_DATA) => bestTotal(DMM_MEMORY, DMM_DECK, DMM_ITEMS, data, panel, cap);
 const rank = (result: ReturnType<typeof dmm>, name: string) => result.ranks.find((r) => r.rank === name);
@@ -88,23 +88,30 @@ describe("bestTotal, the panel (decision G25)", () => {
 });
 
 describe("bestTotal, a held deck card (decision G12)", () => {
-  const held = { ...CARD_DATA, held: [{ id: "s_card-3-0066", name: "放っておけない気になる子", reasons: ["an uncounted trigger"] }] };
+  const held = {
+    ...CARD_DATA,
+    held: [{ id: "s_card-3-0066", name: "放っておけない気になる子", reasons: ["an uncounted trigger", "an uncounted effect type"] }],
+  };
+  const first = uncountedKey("s_card-3-0066", 0);
+  const second = uncountedKey("s_card-3-0066", 1);
 
-  test("marks a not-reachable rank provisional until the held card's ability has a value", () => {
-    const result = dmm({}, 3200, held);
-    expect(result.held.map((h) => h.id)).toEqual(["s_card-3-0066"]);
-    expect(rank(result, "S5")?.provisional).toBe(true);
-    expect(rank(result, "S4+")?.provisional).toBe(false);
+  test("marks a not-reachable rank provisional until every reason has a value", () => {
+    const none = dmm({}, 3200, held);
+    expect(none.held.map((h) => h.id)).toEqual(["s_card-3-0066"]);
+    expect(rank(none, "S5")?.provisional).toBe(true);
+    expect(rank(none, "S4+")?.provisional).toBe(false);
+    const one = dmm({ uncounted: { [first]: { stat: "vocal", points: 10 } } }, 3200, held);
+    expect(rank(one, "S5")?.provisional).toBe(true);
   });
 
-  test("adds the player's points for it, and is no longer provisional", () => {
-    const result = dmm({ uncounted: { "s_card-3-0066": { stat: "vocal", points: 100 } } }, 3200, held);
-    expect(result.total).toBe(6971 + 100);
+  test("adds each reason's points on its own stat, under that stat's cap", () => {
+    const result = dmm({ uncounted: { [first]: { stat: "dance", points: 50 }, [second]: { stat: "visual", points: 100 } } }, 3200, held);
+    expect(result.total).toBe(6971 + 100); // Da is at the cap, so its 50 add nothing
     expect(rank(result, "S5")).toMatchObject({ margin: 27, provisional: false });
   });
 
   test("a value of 0 also ends the provisional mark", () => {
-    const result = dmm({ uncounted: { "s_card-3-0066": { stat: "vocal", points: 0 } } }, 3200, held);
-    expect(rank(result, "S5")).toMatchObject({ margin: -73, provisional: false });
+    const zero = { stat: "vocal" as const, points: 0 };
+    expect(rank(dmm({ uncounted: { [first]: zero, [second]: zero } }, 3200, held), "S5")).toMatchObject({ margin: -73, provisional: false });
   });
 });

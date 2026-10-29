@@ -21,8 +21,16 @@ export interface PanelState {
   /** Source key → fires left. */
   left?: Readonly<Record<string, number>>;
   day3?: Day3;
-  /** Held deck card id → the points the player gives its uncounted abilities, on one stat. */
+  /**
+   * `uncountedKey` → the points the player gives what that reason leaves uncounted, on its stat. A
+   * reason can also concern an effect the card data kept and this page counts; its value is then 0.
+   */
   uncounted?: Readonly<Record<string, { stat: Stat; points: number }>>;
+}
+
+/** The panel's name for a held deck card's reason: the card id and the reason's place in its list. */
+export function uncountedKey(cardId: string, reason: number): string {
+  return `${cardId}#${reason}`;
 }
 
 export interface BestResult {
@@ -103,7 +111,8 @@ export function bestTotal(
   const { abilities, drinks } = deckSources(deck, new Map(data.cards.map((c) => [c.id, c])), items, panel.left ?? {});
   const wappenLeft = items.find((item) => item.itemId === WAPPEN)?.remaining ?? 0;
   const held = data.held.filter((h) => deck.some((slot) => slot.cardId === h.id));
-  const manual = held.flatMap((h) => panel.uncounted?.[h.id] ?? []);
+  const reasons = held.flatMap((h) => h.reasons.map((_, i) => uncountedKey(h.id, i)));
+  const manual = reasons.flatMap((key) => panel.uncounted?.[key] ?? []);
   const ctx: Context = { memory, abilities, drinks, needs: needs([...abilities, ...drinks], wappenLeft), manual, panel, cap };
   const days: readonly Day3[] = panel.day3 === undefined ? ["present", "activity"] : [panel.day3];
   const best = days
@@ -111,6 +120,6 @@ export function bestTotal(
     .reduce((a, b) => (b.total > a.total ? b : a));
   const acquired = best.counts.occasions["GetProduceCard"] ?? 0;
   const finalStar = bestFinalStar({ star: memory.star, affection: memory.affection, wappenLeft: Math.min(wappenLeft, acquired) });
-  const provisional = held.some((h) => panel.uncounted?.[h.id] === undefined);
+  const provisional = reasons.some((key) => panel.uncounted?.[key] === undefined);
   return { ...best, finalStar, ranks: rankLines(best.total, finalStar, provisional), held };
 }

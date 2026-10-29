@@ -27,7 +27,7 @@ export interface DeckSlot {
 /** The item id H.I.Fワッペン takes among the held P-items. */
 export const WAPPEN = "wappen";
 
-/** A P-item the memory holds, with the fires left that its icon shows; absent for an item without a fire limit. */
+/** A P-item the memory holds, with the fires left that its icon shows. Absent: the item's cap if it has one, else no limit. */
 export interface HeldItem {
   itemId: string;
   remaining?: number;
