@@ -30,15 +30,25 @@ A static web page for 学園アイドルマスター players of the H.I.F. scena
 
 ## Architecture
 
-<!-- Describe the high-level structure: key directories, how components relate, data flow. Name the main entry points. -->
+`src/engine/` holds the arithmetic as pure TypeScript with no DOM, one module per rule, each with a co-located `*.test.ts`:
+- `rating.ts`: the rank table, the 評価値 formula, and the total each rank needs for a given final スター性;
+- `star.ts`: the best final スター性 a memory can reach in 本戦;
+- `schedule.ts`: the 324 placements of the 本戦 lessons and 授業, and the best total from the schedule alone;
+- `types.ts`: the shared `Stat` and `Memory` types.
+
+Every floored product is computed in integers, because floating point floors 120 at +2.5% to 122 instead of 123 (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decision G18). Card data, the page, its Worker and the screenshot reader come in later milestones of that plan.
 
 ## Setup and Development
 
-<!-- How to install dependencies, configure the environment, and run the project locally. Include exact commands. -->
+Install with Bun (1.4): `bun install`. Under the Claude Code sandbox, the global cache in `~/.bun` is not writable, so point Bun at a writable one: `BUN_INSTALL_CACHE_DIR="$TMPDIR/bun-cache" bun install` (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md` § Concrete Steps). There is no page to run yet; `bun run dev` arrives with Milestone 4 of that plan.
 
 ## Build and Test
 
-<!-- List the commands to build, test, lint, and format. Show expected output for a clean run. -->
+- `bun test` runs every `*.test.ts`.
+- `bun run type-check` runs `tsc --noEmit` (TypeScript 7).
+- `bun run lint` runs `oxlint --deny-warnings` with type-aware rules.
+
+A clean type check or lint prints only the command line, so judge both by exit status 0. The lint rules in `oxlint.config.ts` were adopted from gakumas-supportcards; an exception goes in that file with its reason and removal condition, never as an inline disable.
 
 ## Code Style
 
