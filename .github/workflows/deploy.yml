@@ -1,0 +1,52 @@
+# Guards: production. This is the only path by which https://gmks-hif-final-stats.tia.run changes.
+# It builds the page from `main` and deploys the Worker, and refuses to when the unit tests, the
+# type check, the lint or the build fail. `main` is production and `develop` is development:
+# merging a release into main IS the deploy. Adopted from gakumas-supportcards' deploy.yml on
+# 2026-10-29 (Milestone 6 of docs/plans/EXECPLAN_HIF_FINAL_STATS.md); infra/workflows.test.ts pins
+# that every gate runs before the deploy step. Needs the repository secrets CLOUDFLARE_API_TOKEN and
+# CLOUDFLARE_ACCOUNT_ID (infra/worker/README.md § Deploy).
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "infra/worker/**"
+      - "index.html"
+      - "package.json"
+      - "bun.lock"
+      - "vite.config.ts"
+      - "tsconfig.json"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One production deployment at a time, in order; a newer run waits instead of cancelling a deploy halfway.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.4.3"
+      - run: bun install --frozen-lockfile
+      - run: bun test
+      - run: bun run type-check
+      - run: bun run lint
+      - run: bun run build
+      - name: Deploy the Worker and the static page
+        working-directory: infra/worker
+        run: bunx wrangler@4 deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -22,7 +22,7 @@ When writing complex features or significant refactors, use an ExecPlan (as desc
 
 Cross-plan decisions live in `docs/adr/` (convention: `docs/adr/README.md`). This list is an index, not a home — one line per active decision with a pointer to its ADR; full context, provenance, and lifecycle live in the ADR file. Every non-obvious claim elsewhere in this file must cite its source (`per docs/adr/NNNN` or `per docs/plans/<plan>.md`) so this snapshot stays auditable and rebuildable. When an ADR corrects something an old plan asserted, the ADR wins.
 
-- `docs/adr/0001-card-data-and-art-are-shared-with-gakumas-supportcards-at-runtime.md` — **accepted** (not implemented yet): support card data comes from a versioned JSON file the sibling gakumas-supportcards publishes, and card art and item icons from its R2 bucket `tia-assets`, which this app's Worker only reads; nothing is copied into this repository.
+- `docs/adr/0001-card-data-and-art-are-shared-with-gakumas-supportcards-at-runtime.md` — **accepted** (data part implemented, art not yet): support card data comes from a versioned JSON file the sibling gakumas-supportcards publishes, and card art and item icons from its R2 bucket `tia-assets`, which this app's Worker only reads; nothing is copied into this repository.
 
 ## Project Overview
 
@@ -30,19 +30,58 @@ A static web page for 学園アイドルマスター players of the H.I.F. scena
 
 ## Architecture
 
-<!-- Describe the high-level structure: key directories, how components relate, data flow. Name the main entry points. -->
+`src/engine/` holds the arithmetic as pure TypeScript with no DOM, one module per rule, each with a co-located `*.test.ts`:
+- `rating.ts`: the rank table, the 評価値 formula, and the total each rank needs for a given final スター性;
+- `star.ts`: the best final スター性 a memory can reach in 本戦;
+- `schedule.ts`: the 324 placements of the 本戦 lessons and 授業, and the best total from the schedule alone;
+- `count.ts`: how often a trigger fires under a set of counts, ported from gakumas-supportcards' counting rule;
+- `honsen-profile.ts`: 本戦's counts from the schedule and the user's typical play, and a stopgap for 選抜's (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decisions G24 and G27);
+- `abilities.ts`: what the deck's support cards and held P-items can still fire in 本戦, with the fires each has left;
+- `total.ts`: `bestTotal`, the best-case bound: every placement scored with the abilities, capped per stat, and every rank's margin;
+- `types.ts`: the shared `Stat`, `Memory`, `DeckSlot`, `HeldItem` and `RankLine` types.
+
+Every count the bound uses is a default the player can change in the panel (decision G25). `src/test-support/dmm.ts` is the DMM sample as engine input; its worked breakdown is in the plan's § Artifacts and Notes.
+
+Every floored product is computed in integers, because floating point floors 120 at +2.5% to 122 instead of 123 (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decision G18).
+
+`src/data/` reads the card data gakumas-supportcards publishes as `/data/cards.v1.json` (per `docs/adr/0001`):
+- `contract.ts`: the file's types, copied from the sibling's `src/engine/types.ts`. Never edit them on their own; a change there bumps the file's format version and name (the sibling's ADR 0010), and the new shapes are copied here then.
+- `load.ts`: `parseCardData` checks the whole file against the contract. One bad value or an empty card list refuses the file, with the path named; fields the contract does not name are dropped (per the plan, decision G23).
+- `fixtures/cards.v1.json`: the sibling's real file, used by the tests. The plan's § Concrete Steps says how to refresh it (decision G22).
+
+`src/app/` is the page (Preact, Tailwind 4): pure modules (`form.ts` holds the form and its URL round trip, `compute.ts`, `panel.ts`, `items.ts`, `picker.ts`, `fields.ts`, `cap.ts`, `labels.ts`), and components laid out as the game's own tabs (per the plan, decisions G26 and G30). `infra/worker/` is its Cloudflare Worker: `/img/*` from the R2 bucket `tia-assets`, read only, and `/data/cards.json` proxied from gakumas-supportcards (decisions G14, G31); `vite.config.ts` answers the same routes in the dev server from the sibling's local files or the fixture, and a missing image with 404. `infra/worker/wrangler.toml` deploys the Worker on `gmks-hif-final-stats.tia.run` (G34, G39).
+
+`src/reader/` reads the two screenshots into values with confidences, in pure functions over a `Raster` (the shape of the browser's `ImageData`); no OCR and no model (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decision G35):
+- `layout.ts` finds each tab's anchor (the 「カスタム」 label, the 「SP」 badge) and measures everything from it in units of width / 720; a field the idol image hides reads as null;
+- `glyphs.ts`, `digits.ts`, `fonts.ts` and `templates.ts` read the numbers against glyph templates cut from the samples; `kihon.ts` and `hensei.ts` say where each field sits;
+- `cards.ts` ranks every card's thumbnail against a tile, `items.ts` matches the サポート P-items' icons, and `custom.ts` reads the カスタム item's character and accessory for メダルもじゃ (decisions G33, G37);
+- `read.ts`'s `readScreenshot` puts it together. `src/app/fill.ts` turns a reading into form values and the fields to ring (G38), and `screenshots.ts` is the browser's decoding.
+
+Two files are generated, never edited: `src/reader/glyph-templates.ts` by `bun scripts/glyph-templates.ts`, and `src/reader/custom-templates.ts` by `bun scripts/custom-templates.ts <folder of extracted layers>` (the plan's § Concrete Steps). The reader's fixtures are in `src/reader/fixtures/`: the six sample pairs (G32), and a snapshot of the sibling's thumbnails and item icons that only the tests read (G36; ADR 0001's update). `src/test-support/samples.ts` holds what each sample shows.
 
 ## Setup and Development
 
-<!-- How to install dependencies, configure the environment, and run the project locally. Include exact commands. -->
+Install with Bun (1.4): `bun install`. Under the Claude Code sandbox, the global cache in `~/.bun` is not writable, so point Bun at a writable one: `BUN_INSTALL_CACHE_DIR="$TMPDIR/bun-cache" bun install` (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md` § Concrete Steps). `bun run dev` serves the page at `http://localhost:5173`. Under the Claude Code sandbox it cannot open its port (`listen EPERM`), so run it outside the sandbox, or set `sandbox.network.allowLocalBinding: true` (per the plan's § Surprises & Discoveries). `SUPPORTCARDS_DIR` points the dev server at a gakumas-supportcards checkout elsewhere than beside this one.
 
 ## Build and Test
 
-<!-- List the commands to build, test, lint, and format. Show expected output for a clean run. -->
+- `bun test` runs every `*.test.ts`.
+- `bun run type-check` runs `tsc --noEmit` (TypeScript 7).
+- `bun run lint` runs `oxlint --deny-warnings` with type-aware rules.
+- `bun run build` writes the page to `dist/`.
+- Component tests (`*.test.tsx`) run in happy-dom under `bun test`; how the page looks is checked in a browser.
+- The reader's tests read every sample and the image snapshot, so `bun test` takes a few seconds; `src/reader/templates.test.ts` fails while a generated template file is stale.
+- CI: `.github/workflows/check.yml` runs the tests, type check, lint and build on every pull request into `develop`. `deploy.yml` runs them again on every push to `main`, then deploys the Worker to `https://gmks-hif-final-stats.tia.run`. `main` is production, and a release is a pull request from `develop` into `main` (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decision G39). The secrets, the first deployment and the checks of the live site are in `infra/worker/README.md`. `infra/workflows.test.ts` pins the workflows' shape, since they cannot run locally.
+
+A clean type check or lint prints only the command line, so judge both by exit status 0. The lint rules in `oxlint.config.ts` were adopted from gakumas-supportcards; an exception goes in that file with its reason and removal condition, never as an inline disable.
 
 ## Code Style
 
 <!-- Language-specific conventions, naming patterns, import ordering, or formatting tools in use. -->
+
+## Tasks
+
+Tasks live on the GitHub board `tia-tools` project `1`; work them with the `task-board` skill. Merges go through PRs into `develop`, the default branch; a PR closes its issue with `Closes #N`.
 
 ## Commit Discipline
 
