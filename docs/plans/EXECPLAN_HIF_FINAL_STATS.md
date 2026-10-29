@@ -614,9 +614,9 @@ Revision note (2026-10-29, later): Milestone 1 merged (#5). Milestone 2 is split
 
 Revision note (2026-10-29, after the sibling's report): the sibling's pull request #57 is open. Two discoveries record the file's actual shape: held cards in a separate `held` list with `reasons`, and what a held card's entry leaves out. Milestone 2's text now names every type to copy and the sibling's versioning rule (its ADR 0010).
 
-Revision note (2026-10-29, Milestone 3 started): Milestone 2 merged (#7). The user answered O1 for 本戦: decisions G24–G26 record the answers and the UI rule. Decision G27 records the 選抜 stopgap. Two discoveries correct the DMM item descriptions and record what the DMM memory holds. O7 is new.
-
 Revision note (2026-10-29, Milestone 2 built): the sibling's pull request #57 merged, and this repository's half is built. Changes:
 - Added decisions G22 (the whole real file as the fixture) and G23 (all-or-nothing loading, unknown fields dropped).
 - Added a discovery partly answering O6: no trigger carries `scenario` today.
 - Added the fixture-refresh steps, the Milestone 2 outcome, the loader's mutation record and the `src/data/` exports.
+
+Revision note (2026-10-29, Milestone 3 started): Milestone 2 merged (#7). The user answered O1 for 本戦: decisions G24–G26 record the answers and the UI rule. Decision G27 records the 選抜 stopgap. Two discoveries correct the DMM item descriptions and record what the DMM memory holds. O7 is new.
