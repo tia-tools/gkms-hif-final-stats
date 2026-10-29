@@ -1,0 +1,23 @@
+name = "gmks-hif-final-stats"
+main = "worker.ts"
+compatibility_date = "2026-09-01"
+
+# Custom domain (decision G34): Cloudflare creates and manages the DNS record when this deploys,
+# since the tia.run zone is in the same account. One single-level subdomain per tia-tools app: the
+# zone's free Universal SSL certificate covers no second level.
+routes = [
+  { pattern = "gmks-hif-final-stats.tia.run", custom_domain = true }
+]
+
+# The built page (`bun run build` at the repository root writes dist/). Only the two paths the
+# Worker answers (worker.ts `route`) run its code first; everything else is served from the assets.
+[assets]
+directory = "../../dist"
+binding = "ASSETS"
+run_worker_first = ["/img/*", "/data/cards.json"]
+
+# The sibling's image library (ADR 0001), read only: img.ts never writes, and no request path maps
+# to its private master/ prefix.
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "tia-assets"
