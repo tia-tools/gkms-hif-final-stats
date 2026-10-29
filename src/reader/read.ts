@@ -124,7 +124,8 @@ function readKihon(r: Raster, frame: Frame, refs: References | null): KihonRead 
   });
   return {
     tab: "kihon",
-    star: field(r, frame, STAR, TEMPLATES.bold, WHOLE),
+    // スター性 is capped at 1110 until 本戦's second round, so a memory holds no more.
+    star: bounded(field(r, frame, STAR, TEMPLATES.bold, WHOLE), 0, 1110),
     // No stat passes the highest cap, 3200 (decision G8).
     params: byStat((s) => bounded(field(r, frame, PARAMS[s], TEMPLATES.bold, WHOLE), 0, 3200)),
     bonusPermil: byStat((s) => bonus(r, frame, BONUSES[s])),

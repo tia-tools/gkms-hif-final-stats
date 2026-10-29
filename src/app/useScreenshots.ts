@@ -9,7 +9,7 @@ import type { Card, CardDataFile } from "../data/contract.ts";
 import { type References, readScreenshot } from "../reader/read.ts";
 import { type Filled, fromHensei, fromKihon, touchedKeys } from "./fill.ts";
 import type { FormState } from "./form.ts";
-import { itemIdsOf, loadReferences, rasterOf } from "./screenshots.ts";
+import { knownItemsOf, loadReferences, rasterOf } from "./screenshots.ts";
 
 export type ReadStatus = "idle" | "reading" | "unread";
 
@@ -49,7 +49,7 @@ export function useScreenshots(form: FormState, update: (patch: Partial<FormStat
     refs.current ??= loadReferences(data);
     const references = await refs.current;
     // Only the items whose icons loaded were compared; the others the read cannot rule out.
-    const itemIds = new Map([...itemIdsOf(data)].filter(([assetId]) => references.icons.has(assetId)));
+    const known = new Map([...knownItemsOf(data)].filter(([assetId]) => references.icons.has(assetId)));
     let unread = false;
     for (const file of files) {
       // Any failure, decoding or reading, leaves this file unread and goes on to the next.
@@ -60,7 +60,7 @@ export function useScreenshots(form: FormState, update: (patch: Partial<FormStat
           return null;
         });
       if (r === null) unread = true;
-      else if (r.tab === "kihon") fill(fromKihon(latest.current, r, itemIds), "kihon");
+      else if (r.tab === "kihon") fill(fromKihon(latest.current, r, known), "kihon");
       else fill(fromHensei(latest.current, r, cards, data.levelLimits), "hensei");
     }
     setStatus(unread ? "unread" : "idle");

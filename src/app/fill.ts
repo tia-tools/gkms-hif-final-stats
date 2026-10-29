@@ -6,10 +6,17 @@
  */
 
 import type { Card, LevelLimits } from "../data/contract.ts";
+import { WAPPEN_FIRES_PER_RUN } from "../engine/star.ts";
 import { type DeckSlot, STATS, type Stat, WAPPEN } from "../engine/types.ts";
 import { isMedalMoja } from "../reader/custom.ts";
-import { type HenseiRead, type KihonRead, type Read, UNSURE } from "../reader/read.ts";
+import { type HenseiRead, type KihonRead, type Read, type Slot, UNSURE } from "../reader/read.ts";
 import type { FormState } from "./form.ts";
+
+/** A card-granted item as the reader knows it: its id, and its fire limit when it has one. */
+export interface KnownItem {
+  id: string;
+  cap?: number;
+}
 
 export interface Filled {
   patch: Partial<FormState>;
@@ -34,16 +41,35 @@ function stats(read: Record<Stat, Read<number> | null>, old: Record<Stat, number
   return out;
 }
 
-/** The P-items the row shows: ワッペン and every matched サポート item, with fires left where shown. */
-function seenItems(read: KihonRead, itemIds: ReadonlyMap<string, string>, unsure: string[]): Record<string, number | null> {
+/** ワッペン, which the card data does not hold: at most 20 fires a run. */
+const WAPPEN_ITEM: KnownItem = { id: WAPPEN, cap: WAPPEN_FIRES_PER_RUN };
+
+/** The item a slot holds: ワッペン in the scenario slot, a known card item where its icon matched. */
+function itemOf(slot: Slot, known: ReadonlyMap<string, KnownItem>): KnownItem | undefined {
+  if (slot.state === "absent" || slot.state === "hidden" || slot.state === "spent") return undefined;
+  if (slot.role === "scenario") return WAPPEN_ITEM;
+  return slot.item === null ? undefined : known.get(slot.item.value);
+}
+
+/** Whether a held slot's item or fires left need checking; fires left above the limit cannot be. */
+function doubtful(slot: Slot, item: KnownItem, left: Read<number> | null): boolean {
+  if (slot.role !== "scenario" && !sure(slot.item)) return true;
+  if (slot.state === "badge" && !sure(left)) return true;
+  return left !== null && item.cap !== undefined && left.value > item.cap;
+}
+
+/**
+ * The P-items the row shows: ワッペン and every matched サポート item, with fires left where shown.
+ * Fires left above the item's limit keep their digits and are marked: the game cannot show them.
+ */
+function seenItems(read: KihonRead, known: ReadonlyMap<string, KnownItem>, unsure: string[]): Record<string, number | null> {
   const items: Record<string, number | null> = {};
   for (const slot of read.slots) {
+    const item = itemOf(slot, known);
+    if (item === undefined) continue;
     const left = slot.state === "badge" ? slot.left : null;
-    const id = slot.role === "scenario" ? WAPPEN : slot.item === null ? undefined : itemIds.get(slot.item.value);
-    if (id === undefined || slot.state === "absent" || slot.state === "hidden" || slot.state === "spent") continue;
-    items[id] = left?.value ?? null;
-    const sureItem = slot.role === "scenario" || sure(slot.item);
-    if (!sureItem || (slot.state === "badge" && !sure(left))) unsure.push(`items.${id}`);
+    items[item.id] = left?.value ?? null;
+    if (doubtful(slot, item, left)) unsure.push(`items.${item.id}`);
   }
   return items;
 }
@@ -54,9 +80,9 @@ function seenItems(read: KihonRead, itemIds: ReadonlyMap<string, string>, unsure
  * the row is whole and every サポート slot it shows matched an item; ワッペン, when the row shows its
  * slot. A slot that matched nothing may hold an item no card grants, or one the matcher missed.
  */
-function heldItems(form: FormState, read: KihonRead, itemIds: ReadonlyMap<string, string>, unsure: string[]): Record<string, number | null> {
-  const items = seenItems(read, itemIds, unsure);
-  const compared = new Set(itemIds.values());
+function heldItems(form: FormState, read: KihonRead, known: ReadonlyMap<string, KnownItem>, unsure: string[]): Record<string, number | null> {
+  const items = seenItems(read, known, unsure);
+  const compared = new Set([...known.values()].map((k) => k.id));
   const rowCut = read.slots.some((s) => s.state === "hidden");
   const unmatched = read.slots.some((s) => s.role === "support" && s.item === null && (s.state === "none" || s.state === "badge"));
   const wappenSeen = read.slots.some((s) => s.role === "scenario" && s.state !== "absent" && s.state !== "hidden");
@@ -71,15 +97,15 @@ function heldItems(form: FormState, read: KihonRead, itemIds: ReadonlyMap<string
 }
 
 /**
- * From a 基本情報 screenshot. `itemIds` maps an item icon's asset id to its item id, for every item
- * whose icon the reader compared.
+ * From a 基本情報 screenshot. `known` maps an item icon's asset id to its item, for every item whose
+ * icon the reader compared.
  */
-export function fromKihon(form: FormState, read: KihonRead, itemIds: ReadonlyMap<string, string>): Filled {
+export function fromKihon(form: FormState, read: KihonRead, known: ReadonlyMap<string, KnownItem>): Filled {
   const unsure: string[] = [];
   const patch: Partial<FormState> = {
     params: stats(read.params, form.params, "params", unsure),
     bonusPermil: stats(read.bonusPermil, form.bonusPermil, "bonus", unsure),
-    items: heldItems(form, read, itemIds, unsure),
+    items: heldItems(form, read, known, unsure),
   };
   if (read.star !== null) patch.star = read.star.value;
   if (!sure(read.star)) unsure.push("star");

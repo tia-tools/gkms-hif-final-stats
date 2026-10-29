@@ -9,6 +9,7 @@ import { integral } from "../reader/cards.ts";
 import { iconTemplate } from "../reader/items.ts";
 import type { Raster } from "../reader/raster.ts";
 import type { References } from "../reader/read.ts";
+import type { KnownItem } from "./fill.ts";
 import { itemIconUrl, thumbnailUrl } from "./images.ts";
 
 export async function rasterOf(image: Blob): Promise<Raster> {
@@ -56,7 +57,7 @@ export async function loadReferences(data: CardDataFile): Promise<References> {
   return { thumbs, icons };
 }
 
-/** Each card-granted item's id by its icon's asset id. */
-export function itemIdsOf(data: CardDataFile): Map<string, string> {
-  return new Map(data.cards.flatMap((c) => (c.items ?? []).map((i): [string, string] => [i.assetId, i.itemId])));
+/** Each card-granted item, its id and fire limit, by its icon's asset id. */
+export function knownItemsOf(data: CardDataFile): Map<string, KnownItem> {
+  return new Map(data.cards.flatMap((c) => (c.items ?? []).map((i): [string, KnownItem] => [i.assetId, { id: i.itemId, ...(i.cap ? { cap: i.cap } : {}) }])));
 }

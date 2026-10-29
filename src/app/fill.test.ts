@@ -37,9 +37,9 @@ function kihon(over: Partial<KihonRead> = {}): KihonRead {
 }
 
 const ITEM_IDS = new Map([
-  ["img_general_pitem_3-352", "pitem_00-3-352-0"],
-  ["img_general_pitem_3-263", "pitem_03-3-263-0"],
-  ["img_general_pitem_2-004", "pitem_00-2-004-0"],
+  ["img_general_pitem_3-352", { id: "pitem_00-3-352-0", cap: 3 }],
+  ["img_general_pitem_3-263", { id: "pitem_03-3-263-0", cap: 2 }],
+  ["img_general_pitem_2-004", { id: "pitem_00-2-004-0" }],
 ]);
 
 describe("fromKihon", () => {
@@ -99,6 +99,17 @@ describe("fromKihon", () => {
     const { patch, unsure: check } = fromKihon(form, kihon({ slots }), ITEM_IDS);
     expect(patch.items).toEqual({ [WAPPEN]: 7, "pitem_03-3-263-0": 1 });
     expect(check).toEqual([`items.${WAPPEN}`, "items.pitem_03-3-263-0"]);
+  });
+
+  test("fires left above the item's limit keep their digits and are marked: ワッペン's 20, a card item's cap", () => {
+    const slots = kihon().slots.map((s, k) => {
+      if (k === 2) return { role: "scenario" as const, item: null, state: "badge" as const, left: sure(25) };
+      if (k === 3) return { role: "support" as const, item: sure("img_general_pitem_3-352"), state: "badge" as const, left: sure(4) };
+      return s;
+    });
+    const { patch, unsure: check } = fromKihon(emptyForm(), kihon({ slots }), ITEM_IDS);
+    expect([patch.items?.[WAPPEN], patch.items?.["pitem_00-3-352-0"]]).toEqual([25, 4]);
+    expect(check).toEqual([`items.${WAPPEN}`, "items.pitem_00-3-352-0"]);
   });
 
   test("an item matched unsurely, or its fires left read unsurely, is marked", () => {

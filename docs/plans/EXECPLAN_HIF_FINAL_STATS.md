@@ -143,6 +143,9 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
   - An unread tile kept its level unringed. It now rings both card and level.
   Evidence: the third Codex review of 2026-10-29, on a fresh snapshot; it wrote nothing to the repository.
 
+- Observation: A fourth Codex review found one more class, now fixed with tests that fail against the old code: values checked only for their shape. A スター性 above 1110 (its cap until 本戦's second round), ワッペン's fires left above 20, and a card item's fires left above its fire limit now keep their digits but are ringed, as an impossible stat, 親愛度 or Lv already was.
+  Evidence: the fourth Codex review of 2026-10-29, on a fresh snapshot; it wrote nothing to the repository.
+
 - Observation: Under the Claude Code sandbox, Python's `requests` cannot verify TLS, because the sandbox denies reading every `*.pem` file, certifi's CA bundle included. The one-off layer extraction (G37) therefore ran outside the sandbox. It wrote only to `$TMPDIR`. `Bun.Image`, built into Bun 1.4, decodes webp to PNG, so the tests read the sibling's thumbnails without a new dependency; it returns encoded images only, which `src/test-support/png.ts` then decodes.
   Evidence: `OSError: Could not find a suitable TLS CA certificate bundle` from `gom.fetch()` in the sandbox; the same call outside it listed manifest 205100:0075 and its 16 layers (2026-10-29).
 

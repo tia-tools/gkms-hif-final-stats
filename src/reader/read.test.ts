@@ -87,6 +87,15 @@ describe("readScreenshot over the samples", () => {
     expect(read?.tab === "kihon" ? read.params.vocal : null).toEqual({ value: 9982, confidence: 0 });
   });
 
+  test("a スター性 past its cap of 1110 keeps its digits but loses its confidence", async () => {
+    // On the DMM sample, copy スター性's last "0" (x 146–158) into the space after it: 8100.
+    const r = await loadFixture("dmm-01-kihon");
+    const data = new Uint8ClampedArray(r.data);
+    for (let y = 605; y < 631; y++) data.copyWithin((y * r.width + 161) * 4, (y * r.width + 146) * 4, (y * r.width + 159) * 4);
+    const read = readScreenshot({ ...r, data });
+    expect(read?.tab === "kihon" ? read.star : null).toEqual({ value: 8100, confidence: 0 });
+  });
+
   test("a shape outside 9:16 to 9:20 is refused, anchor or not (G7)", async () => {
     // The DMM 基本情報 sample cut to 720 × 960, 4:3, with its 「カスタム」 label still in it.
     const full = await loadFixture("dmm-01-kihon");
