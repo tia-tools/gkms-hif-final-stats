@@ -48,11 +48,13 @@ export function useScreenshots(form: FormState, update: (patch: Partial<FormStat
     setStatus("reading");
     refs.current ??= loadReferences(data);
     const references = await refs.current;
+    // Only the items whose icons loaded were compared; the others the read cannot rule out.
+    const itemIds = new Map([...itemIdsOf(data)].filter(([assetId]) => references.icons.has(assetId)));
     let unread = false;
     for (const file of files) {
-      const r = readScreenshot(await rasterOf(file), references);
+      const r = await rasterOf(file).then((raster) => readScreenshot(raster, references), () => null);
       if (r === null) unread = true;
-      else if (r.tab === "kihon") fill(fromKihon(latest.current, r, itemIdsOf(data)), "kihon");
+      else if (r.tab === "kihon") fill(fromKihon(latest.current, r, itemIds), "kihon");
       else fill(fromHensei(latest.current, r, cards, data.levelLimits), "hensei");
     }
     setStatus(unread ? "unread" : "idle");

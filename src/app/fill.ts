@@ -34,13 +34,13 @@ function stats(read: Record<Stat, Read<number> | null>, old: Record<Stat, number
   return out;
 }
 
-/** The P-items the row holds: ワッペン and every matched サポート item, with fires left where shown. */
-function heldItems(read: KihonRead, itemIds: ReadonlyMap<string, string>, unsure: string[]): Record<string, number | null> {
+/** The P-items the row shows: ワッペン and every matched サポート item, with fires left where shown. */
+function seenItems(read: KihonRead, itemIds: ReadonlyMap<string, string>, unsure: string[]): Record<string, number | null> {
   const items: Record<string, number | null> = {};
   for (const slot of read.slots) {
     const left = slot.state === "badge" ? slot.left : null;
     const id = slot.role === "scenario" ? WAPPEN : slot.item === null ? undefined : itemIds.get(slot.item.value);
-    if (id === undefined || slot.state === "absent" || slot.state === "spent") continue;
+    if (id === undefined || slot.state === "absent" || slot.state === "hidden" || slot.state === "spent") continue;
     items[id] = left?.value ?? null;
     const sureItem = slot.role === "scenario" || sure(slot.item);
     if (!sureItem || (slot.state === "badge" && !sure(left))) unsure.push(`items.${id}`);
@@ -49,15 +49,35 @@ function heldItems(read: KihonRead, itemIds: ReadonlyMap<string, string>, unsure
 }
 
 /**
+ * The held P-items after the read: what the row shows, and the form's own items the read could not
+ * rule out, kept and marked. An item is ruled out only when its icon was compared with every slot
+ * and the row is whole; ワッペン, when the row shows its slot.
+ */
+function heldItems(form: FormState, read: KihonRead, itemIds: ReadonlyMap<string, string>, unsure: string[]): Record<string, number | null> {
+  const items = seenItems(read, itemIds, unsure);
+  const compared = new Set(itemIds.values());
+  const rowCut = read.slots.some((s) => s.state === "hidden");
+  const wappenSeen = read.slots.some((s) => s.role === "scenario" && s.state !== "absent" && s.state !== "hidden");
+  for (const [id, left] of Object.entries(form.items)) {
+    if (id in items) continue;
+    const ruledOut = id === WAPPEN ? wappenSeen : !rowCut && compared.has(id);
+    if (ruledOut) continue;
+    items[id] = left;
+    unsure.push(`items.${id}`);
+  }
+  return items;
+}
+
+/**
  * From a 基本情報 screenshot. `itemIds` maps an item icon's asset id to its item id, for every item
- * a card grants.
+ * whose icon the reader compared.
  */
 export function fromKihon(form: FormState, read: KihonRead, itemIds: ReadonlyMap<string, string>): Filled {
   const unsure: string[] = [];
   const patch: Partial<FormState> = {
     params: stats(read.params, form.params, "params", unsure),
     bonusPermil: stats(read.bonusPermil, form.bonusPermil, "bonus", unsure),
-    items: heldItems(read, itemIds, unsure),
+    items: heldItems(form, read, itemIds, unsure),
   };
   if (read.star !== null) patch.star = read.star.value;
   if (!sure(read.star)) unsure.push("star");
@@ -78,7 +98,10 @@ export function fromHensei(form: FormState, read: HenseiRead, cards: ReadonlyMap
   const unsure: string[] = [];
   const deck: (DeckSlot | null)[] = read.tiles.map((tile, i) => {
     const best = tile.cards[0];
-    if (best === undefined) return form.deck[i] ?? null;
+    if (best === undefined) {
+      unsure.push(`deck.${i}`);
+      return form.deck[i] ?? null;
+    }
     const limit = limitOf(cards.get(best.id), tile.marks, limits);
     const level = tile.level?.value ?? limit ?? 1;
     if (tile.cardConfidence < UNSURE) unsure.push(`deck.${i}`);
@@ -100,7 +123,10 @@ export function touchedKeys(form: FormState, patch: Partial<FormState>): string[
   }
   const plain = { star: "star", affection: "affection", medalMoja: "medalMoja", refreshesLeft: "refreshes" } as const;
   for (const [field, key] of Object.entries(plain)) if (field in patch) out.push(key);
-  for (const id of Object.keys(patch.items ?? {})) if (patch.items?.[id] !== form.items[id]) out.push(`items.${id}`);
+  if (patch.items !== undefined) {
+    const items = patch.items;
+    for (const id of new Set([...Object.keys(items), ...Object.keys(form.items)])) if (items[id] !== form.items[id] || id in items !== id in form.items) out.push(`items.${id}`);
+  }
   patch.deck?.forEach((slot, i) => {
     const old = form.deck[i];
     if (slot?.cardId !== old?.cardId) out.push(`deck.${i}`);

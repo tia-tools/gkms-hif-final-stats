@@ -76,6 +76,22 @@ describe("fromKihon", () => {
     expect(fromKihon(emptyForm(), kihon({ custom: null }), ITEM_IDS).unsure).toEqual(["medalMoja"]);
   });
 
+  test("an item the form holds is dropped only when the read rules it out", () => {
+    const form = { ...emptyForm(), items: { "pitem_00-3-352-0": 1, "pitem_03-3-263-0": 1, "pitem_x": 2 } };
+    // pitem_03-3-263-0 was compared and is spent; pitem_x's icon was never compared, so it stays, marked.
+    const { patch, unsure: check } = fromKihon(form, kihon(), ITEM_IDS);
+    expect(patch.items).toEqual({ [WAPPEN]: 4, "pitem_00-3-352-0": 1, "pitem_00-2-004-0": null, pitem_x: 2 });
+    expect(check).toEqual(["items.pitem_x"]);
+  });
+
+  test("a row cut at the image's edge rules nothing out, and ワッペン stays when its slot is not shown", () => {
+    const form = { ...emptyForm(), items: { [WAPPEN]: 7, "pitem_03-3-263-0": 1 } };
+    const slots = kihon().slots.slice(0, 2).concat([{ role: "support", item: null, state: "hidden" }]);
+    const { patch, unsure: check } = fromKihon(form, kihon({ slots }), ITEM_IDS);
+    expect(patch.items).toEqual({ [WAPPEN]: 7, "pitem_03-3-263-0": 1 });
+    expect(check).toEqual([`items.${WAPPEN}`, "items.pitem_03-3-263-0"]);
+  });
+
   test("an item matched unsurely, or its fires left read unsurely, is marked", () => {
     const slots = kihon().slots.map((s, k) => (k === 3 ? { role: "support" as const, item: unsure("img_general_pitem_3-352"), state: "badge" as const, left: sure(1) } : s));
     expect(fromKihon(emptyForm(), kihon({ slots }), ITEM_IDS).unsure).toEqual(["items.pitem_00-3-352-0"]);
@@ -116,10 +132,12 @@ describe("fromHensei", () => {
     expect(fromHensei(emptyForm(), hensei(tiles), CARDS, CARD_DATA.levelLimits).unsure).toEqual(["level.1", "deck.2"]);
   });
 
-  test("without card candidates a slot keeps the form's card", () => {
+  test("without card candidates a slot keeps the form's card, marked", () => {
     const form = { ...emptyForm(), deck: [{ cardId: "s_card-3-0062", level: 60 }, null, null, null, null, null] };
-    const { patch } = fromHensei(form, hensei(six(() => tile("x", { cards: [] }))), CARDS, CARD_DATA.levelLimits);
+    const tiles = six((i) => (i === 0 ? tile("x", { cards: [] }) : tile("s_card-3-0099")));
+    const { patch, unsure: check } = fromHensei(form, hensei(tiles), CARDS, CARD_DATA.levelLimits);
     expect(patch.deck?.[0]).toEqual({ cardId: "s_card-3-0062", level: 60 });
+    expect(check).toEqual(["deck.0"]);
   });
 });
 
@@ -131,5 +149,7 @@ describe("touchedKeys", () => {
     expect(touchedKeys(form, { deck: [{ cardId: "a", level: 55 }, ...form.deck.slice(1)] })).toEqual(["level.0"]);
     expect(touchedKeys(form, { deck: [{ cardId: "b", level: 60 }, ...form.deck.slice(1)] })).toEqual(["deck.0"]);
     expect(touchedKeys(form, { items: { wappen: 3 } })).toEqual(["items.wappen"]);
+    // Taking an item off settles its mark too.
+    expect(touchedKeys({ ...form, items: { wappen: 3, a: 1 } }, { items: { wappen: 3 } })).toEqual(["items.a"]);
   });
 });
