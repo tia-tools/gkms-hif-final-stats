@@ -2,7 +2,7 @@
 
 Can this 選抜試験メモリー still reach S5? This is a web page for players of 学園アイドルマスター's H.I.F. scenario. Give it two screenshots of a memory, and it shows the best Vo+Da+Vi total that memory can still reach in 本戦, against what each produce rank needs.
 
-**https://gmks-hif-final-stats.tia.run**
+**https://gkms-hif-final-stats.tia.run**
 
 ## Using it
 
