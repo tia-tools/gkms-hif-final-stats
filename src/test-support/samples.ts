@@ -18,6 +18,11 @@ export interface KihonSample {
   /** null where the idol image hides it (the tab is scrolled). */
   affection: number | null;
   slots: SlotDigit[];
+  /**
+   * The icon in each サポート slot, by its asset id, or null for an item the card data does not
+   * hold (or a spent one, which is not matched). The other slots are null too.
+   */
+  icons: (string | null)[];
 }
 
 export interface HenseiSample {
@@ -36,6 +41,7 @@ const DMM_KIHON: KihonSample = {
   bonusPermil: [371, 598, 288],
   affection: 37,
   slots: [1, "none", 4, 1, "none", 1, 1],
+  icons: [null, null, null, "img_general_pitem_3-352", null, "img_general_pitem_3-263", null],
 };
 
 const DMM_HENSEI: HenseiSample = {
@@ -51,6 +57,7 @@ export const KIHON: Record<Sample, KihonSample> = {
     bonusPermil: [547, 513, 252],
     affection: 37,
     slots: [1, "none", 2, "spent", "none", "none", "none"],
+    icons: [null, null, null, null, null, null, null],
   },
   "iphone-15promax-03": {
     star: 795,
@@ -58,6 +65,7 @@ export const KIHON: Record<Sample, KihonSample> = {
     bonusPermil: [533, 507, 258],
     affection: 37,
     slots: [1, "none", 5, "none", "none", "none"],
+    icons: [null, null, null, null, null, null],
   },
   "iphone-16e-01": {
     star: 814,
@@ -65,6 +73,7 @@ export const KIHON: Record<Sample, KihonSample> = {
     bonusPermil: [280, 564, 500],
     affection: 37,
     slots: [2, "none", 3, "none", 4, "none"],
+    icons: [null, null, null, "img_general_pitem_2-004", "img_general_pitem_3-058", null],
   },
   "iphone-se3-01": {
     star: 735,
@@ -72,6 +81,7 @@ export const KIHON: Record<Sample, KihonSample> = {
     bonusPermil: [286, 548, 532],
     affection: null,
     slots: [1, "none", 9, "none", 1, "none", 3],
+    icons: [null, null, null, "img_general_pitem_2-004", "img_general_pitem_3-058", null, "img_general_pitem_3-140"],
   },
 };
 

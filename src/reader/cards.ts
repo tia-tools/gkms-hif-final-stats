@@ -84,6 +84,11 @@ function boxMean(t: Integral, rect: { x0: number; y0: number; x1: number; y1: nu
   }
 }
 
+/** The mean colour over a box of pixels, into out[0..2]. */
+export function boxMeanOf(t: Integral, b: { x: number; y: number; w: number; h: number }, out: Float32Array): void {
+  boxMean(t, { x0: b.x, y0: b.y, x1: b.x + b.w, y1: b.y + b.h }, out, 0);
+}
+
 /** Signature of a rectangle of an image mapped onto the tile: tile unit (u, v) ↦ (x0 + u·sx, y0 + v·sy). */
 function signatureOf(t: Integral, grid: Grid, x0: number, y0: number, sx: number, sy: number): Signature {
   const out = new Float32Array(grid.cols * grid.rows * 3);
