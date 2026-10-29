@@ -25,7 +25,7 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-29 01:10Z) Milestone 1: toolchain, rating arithmetic, スター性 bound, schedule-only bound. Issue #4, branch `feature/m1-rating-schedule`: `bun test` 30 pass, type-check and lint clean, every guard seen red by mutation (`Artifacts and Notes`).
 - [x] (2026-10-29 02:07Z) Milestone 1 merged into `develop` by pull request #5 (merge commit 841b7be), closing #4.
 - [x] (2026-10-29 03:02Z) Milestone 2 (issue #6, branch `feature/m2-card-data`), sibling half: gakumas-supportcards publishes `dist/data/cards.v1.json`, worked by a session in that repository (decision G21). Its pull request #57 (`tia-tools/gakumas-supportcards`) merged into its `develop` as d08f3de. The file goes live only after the sibling's `develop` is released into `main`, which deploys. Milestone 4's Worker needs that; this milestone's tests do not.
-- [x] (2026-10-29 03:10Z) Milestone 2, this repository's half: `src/data/contract.ts`, `src/data/load.ts` and the fixture `src/data/fixtures/cards.v1.json`. `bun test` 45 pass, type-check and lint clean, every loader guard seen red by mutation (`Artifacts and Notes`).
+- [x] (2026-10-29 03:10Z) Milestone 2, this repository's half: `src/data/contract.ts`, `src/data/load.ts` and the fixture `src/data/fixtures/cards.v1.json`. `bun test` 46 pass, type-check and lint clean, every loader guard seen red by mutation (`Artifacts and Notes`).
 - [ ] Milestone 2 merged into `develop` by a pull request that closes #6.
 - [ ] Milestone 3: support abilities and P-items in 本戦; the full best-case bound.
 - [ ] Milestone 4: the form page and its Worker.
@@ -407,7 +407,7 @@ Then run it, and compare the result with the sibling's own build output where on
     shasum -a 256 "$TMPDIR/cards.v1.json" <S>/dist/data/cards.v1.json   # same hash
     cp "$TMPDIR/cards.v1.json" src/data/fixtures/cards.v1.json            # from this repository's root
 
-On 2026-10-29 both hashes were `b989a77e…0d8881`, and `bun test src/data` printed `15 pass, 0 fail`.
+On 2026-10-29 both hashes were `b989a77e…0d8881`, and `bun test src/data` printed `16 pass, 0 fail`.
 
 Milestone 3: `bun test src/engine` additionally prints the DMM sample breakdown in a test's snapshot; the user confirms it.
 
@@ -487,6 +487,8 @@ Milestone 2's loader was written before its tests ran, so the tests were first r
     card keeps unknown fields                 RED   drops a field the contract does not name
     rarity not required                       RED   refuses a missing required field
     object check disabled                     RED   names a value that should be an object (added after this mutant first survived)
+    integer accepts fractions                 RED   refuses a fractional or non-finite number (1.5 added after the Codex review)
+    scenario dropped from triggers            RED   keeps a trigger's scenario (added after the Codex review: no real card has one)
 
 
 ## Interfaces and Dependencies

@@ -113,9 +113,11 @@ describe("parseCardData, a broken card", () => {
   });
 
   test("refuses a fractional or non-finite number", () => {
-    const file = fixture();
-    firstEffect(file, 0)["value"] = Number.NaN;
-    expect(() => parseCardData(file)).toThrow("cards[0].breakpoints[0].effects[0].value");
+    for (const value of [1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const file = fixture();
+      firstEffect(file, 0)["value"] = value;
+      expect(() => parseCardData(file)).toThrow("cards[0].breakpoints[0].effects[0].value: expected an integer");
+    }
   });
 });
 
@@ -124,6 +126,16 @@ describe("parseCardData, what may vary", () => {
     const file = fixture();
     file["held"] = [{ id: "s_card-3-0099", name: "もうすぐ本番ですね", reasons: ["an uncountable trigger"] }];
     expect(parseCardData(file).held).toEqual([{ id: "s_card-3-0099", name: "もうすぐ本番ですね", reasons: ["an uncountable trigger"] }]);
+  });
+
+  test("keeps a trigger's scenario, which no card in the real file has yet", () => {
+    const file = fixture();
+    const i = file.cards.findIndex((c) => JSON.stringify(c).includes('"trigger":{"occasion":'));
+    const text = JSON.stringify(at(file.cards, i)).replace('"trigger":{"occasion":', '"trigger":{"scenario":"produce-008","occasion":');
+    file.cards[i] = JSON.parse(text);
+    const json: unknown = file;
+    expect(json).toStrictEqual(parseCardData(file));
+    expect(JSON.stringify(parseCardData(file).cards[i])).toContain('"scenario":"produce-008"');
   });
 
   test("drops a field the contract does not name, without refusing the file", () => {
