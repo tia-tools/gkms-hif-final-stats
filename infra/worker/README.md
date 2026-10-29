@@ -21,9 +21,13 @@ It needs two repository secrets, set once by a person in the repository's settin
 | Scope | Permission | Used by |
 |---|---|---|
 | Workers, only the Worker `gmks-hif-final-stats` | **Editor** | the script and the static assets |
-| Zone, only `tia.run` | **Workers Routes: Edit** | the custom domain in `wrangler.toml` |
+| Zone, only `tia.run` | **Workers Routes: Write** | the custom domain in `wrangler.toml` |
 
-A Worker can be named in a token's scope only once it exists, so the first deployment is by hand (below), or the token starts with the account-wide Workers Editor and is narrowed after. This Worker only reads R2 through its binding, so no R2 permission should be needed: binding a bucket is part of the Worker's configuration. If a deploy fails with a permissions error, the message names the missing permission. Add that one, and record which.
+Editor can deploy and update an existing Worker but cannot create one: creating a Worker needs **Admin** at the Workers product level, and a token can name a Worker only once it exists. So the first deployment is either:
+- by hand (below), by an account member with that access;
+- or by `deploy.yml`, under a token that first holds product-level Workers Admin and is narrowed to Editor on this Worker after.
+
+Binding the R2 bucket needs no R2 permission: deploying a Worker never needs permissions on the resources it binds. Source: Cloudflare's [Workers roles and permissions](https://developers.cloudflare.com/workers/authorization/workers/), read 2026-10-29. If a deploy still fails with a permissions error, the message names the missing permission. Add that one, and record which.
 
 By hand, for the first deployment or an emergency, with `bunx wrangler login` on the account that holds `tia.run`. Run from the repository root:
 
@@ -35,7 +39,7 @@ The `custom_domain` route makes Cloudflare attach the Worker to `gmks-hif-final-
 
     bunx wrangler deploy --dry-run --outdir "$TMPDIR/wrangler-out"
 
-It prints the bindings (`env.IMAGES (tia-assets)`, `env.ASSETS`). Under the Claude Code sandbox it also reports, harmlessly, that it cannot write its log under `~/Library/Preferences/.wrangler` and that its telemetry host is refused.
+It prints the bindings (`env.IMAGES (tia-assets)`, `env.ASSETS`). Under the Claude Code sandbox on macOS it also reports two harmless refusals: it cannot write its log under `~/Library/Preferences/.wrangler`, and its telemetry host is refused. The log is Wrangler's own; the sandbox allows no write there.
 
 ## Verify
 
