@@ -27,7 +27,7 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-29 03:10Z) Milestone 2, this repository's half: `src/data/contract.ts`, `src/data/load.ts` and the fixture `src/data/fixtures/cards.v1.json`. `bun test` 46 pass, type-check and lint clean, every loader guard seen red by mutation (`Artifacts and Notes`).
 - [x] (2026-10-29 03:40Z) Milestone 2 merged into `develop` by pull request #7 (merge commit b1363b2), closing #6.
 - [x] (2026-10-29 04:00Z) Open item O1 answered for 本戦 by the user (decisions G24–G26). 選抜 counts stay a stopgap (decision G27).
-- [x] (2026-10-29 05:10Z) Milestone 3 (issue #8, branch `feature/m3-honsen-abilities`), code: `src/engine/count.ts`, `honsen-profile.ts`, `abilities.ts` and `total.ts`. `bun test` 92 pass, type-check and lint clean, every guard seen red by mutation. The DMM sample comes to 6971, short of S5 by 73 (`Artifacts and Notes`).
+- [x] (2026-10-29 05:10Z) Milestone 3 (issue #8, branch `feature/m3-honsen-abilities`), code: `src/engine/count.ts`, `honsen-profile.ts`, `abilities.ts` and `total.ts`. `bun test` 94 pass after the Codex reviews' fixes, type-check and lint clean, every guard seen red by mutation. The DMM sample comes to 6971, short of S5 by 73 (`Artifacts and Notes`).
 - [ ] Milestone 3, acceptance: the user checks the DMM breakdown line by line.
 - [ ] Milestone 3 merged into `develop` by a pull request that closes #8.
 - [ ] Milestone 4: the form page and its Worker.
@@ -64,7 +64,7 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - Observation: The published card file keeps held cards in a separate top-level list, not on each card, and calls the field `reasons`, not `uncounted` as this plan first said. The top-level keys are `formatVersion`, `levelLimits`, `cards` and `held`, in that order. Each `held` entry is a `HeldCard`, `{ id, name, reasons: string[] }`. `cards` holds every card, held ones included.
   Evidence: the sibling's pull request #57, `data/card-data-file.ts` (`CardDataFile`), and the sibling session's report of 2026-10-29. Its build printed `1` and `210` for `jq '.formatVersion, (.cards | length)'`. `held` was `[]` that day. The file is compact JSON of about 1.57 MB (45 KB gzipped).
 
-- Observation: A held card's entry in `cards` is incomplete in one of two ways, depending on why it is held. If the sibling cannot read an effect at all, that effect is left out of the card. If it can read the effect but one of its own route profiles has no number for it, the effect stays in the card. Milestone 3 must therefore not assume that every reason in `held` stands for a missing effect. An effect that stays may be countable here with the 本戦 profile. Only effects that are actually missing become 「未計上」 lines with a manual points field (decision G12).
+- Observation: A held card's entry in `cards` is incomplete in one of two ways, depending on why it is held. If the sibling cannot read an effect at all, that effect is left out of the card. If it can read the effect but one of its own route profiles has no number for it, the effect stays in the card. Milestone 3 must therefore not assume that every reason in `held` stands for a missing effect. An effect that stays may be countable here with the 本戦 profile. Only effects that are actually missing should add manual points (decision G12). Milestone 3 found that the reasons cannot tell the two cases apart, so every reason gets a 「未計上」 entry, and the player enters 0 for one whose effect is already counted here (decision G28).
   Evidence: the doc comment on `held` in the sibling's `data/card-data-file.ts` (pull request #57).
 
 - Observation: No trigger in the published data carries a `scenario` field today. No support card ability or card-granted P-item in it is limited to one scenario, so open item O6 has no case to handle yet. A card added later could still bring one.
@@ -460,7 +460,7 @@ Then run it, and compare the result with the sibling's own build output where on
 
 On 2026-10-29 both hashes were `b989a77e…0d8881`, and `bun test src/data` printed `16 pass, 0 fail`.
 
-Milestone 3: `bun test src/engine` passes, and `src/engine/total.test.ts` pins the DMM breakdown in `Artifacts and Notes` line by line; the user confirms that breakdown. On 2026-10-29 `bun test` printed `92 pass, 0 fail`.
+Milestone 3: `bun test src/engine` passes, and `src/engine/total.test.ts` pins the DMM breakdown in `Artifacts and Notes` line by line; the user confirms that breakdown. On 2026-10-29 `bun test` printed `94 pass, 0 fail`.
 
 Milestone 4: `bun run dev`, open `http://localhost:5173`, and enter the DMM sample by hand. The S5 line shows "not reachable" with the shortfall, matching Milestone 3's number.
 
