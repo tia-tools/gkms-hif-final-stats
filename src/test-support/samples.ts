@@ -4,6 +4,8 @@
  * and iPhone 15 Pro Max 01 are the same memory on two devices.
  */
 
+import type { Accessory, Character } from "../reader/custom.ts";
+
 export const SAMPLES = ["dmm-01", "iphone-15promax-01", "iphone-15promax-02", "iphone-15promax-03", "iphone-16e-01", "iphone-se3-01"] as const;
 export type Sample = (typeof SAMPLES)[number];
 
@@ -23,6 +25,8 @@ export interface KihonSample {
    * hold (or a spent one, which is not matched). The other slots are null too.
    */
   icons: (string | null)[];
+  /** The カスタム item's character and accessory, by eye and as the user named them (G33). */
+  custom: [Character, Accessory | null];
 }
 
 export interface HenseiSample {
@@ -42,6 +46,7 @@ const DMM_KIHON: KihonSample = {
   affection: 37,
   slots: [1, "none", 4, 1, "none", 1, 1],
   icons: [null, null, null, "img_general_pitem_3-352", null, "img_general_pitem_3-263", null],
+  custom: ["もじゃ", "花"],
 };
 
 const DMM_HENSEI: HenseiSample = {
@@ -58,6 +63,7 @@ export const KIHON: Record<Sample, KihonSample> = {
     affection: 37,
     slots: [1, "none", 2, "spent", "none", "none", "none"],
     icons: [null, null, null, null, null, null, null],
+    custom: ["ロボ", "羽"],
   },
   "iphone-15promax-03": {
     star: 795,
@@ -66,6 +72,7 @@ export const KIHON: Record<Sample, KihonSample> = {
     affection: 37,
     slots: [1, "none", 5, "none", "none", "none"],
     icons: [null, null, null, null, null, null],
+    custom: ["もじゃ", "花"],
   },
   "iphone-16e-01": {
     star: 814,
@@ -74,6 +81,7 @@ export const KIHON: Record<Sample, KihonSample> = {
     affection: 37,
     slots: [2, "none", 3, "none", 4, "none"],
     icons: [null, null, null, "img_general_pitem_2-004", "img_general_pitem_3-058", null],
+    custom: ["ロボ", "花"],
   },
   "iphone-se3-01": {
     star: 735,
@@ -82,6 +90,7 @@ export const KIHON: Record<Sample, KihonSample> = {
     affection: null,
     slots: [1, "none", 9, "none", 1, "none", 3],
     icons: [null, null, null, "img_general_pitem_2-004", "img_general_pitem_3-058", null, "img_general_pitem_3-140"],
+    custom: ["ロボ", "羽"],
   },
 };
 
