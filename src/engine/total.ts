@@ -5,7 +5,7 @@
  */
 
 import type { CardDataFile, HeldCard } from "../data/contract.ts";
-import { type Ability, type AbilityLine, type DrinkSource, abilityLines, deckSources, itemDrinks, needs } from "./abilities.ts";
+import { type Ability, type AbilityLine, type DrinkLine, type DrinkSource, abilityLines, deckSources, drinkLines, needs } from "./abilities.ts";
 import type { Counts } from "./count.ts";
 import { type Day3, honsenCounts } from "./honsen-profile.ts";
 import { RANKS, requiredTotal } from "./rating.ts";
@@ -38,6 +38,8 @@ export interface BestResult {
   day3: Day3;
   counts: Counts;
   lines: AbilityLine[];
+  /** The drink-granting P-items' fires, counted before their own drinks join the counts. */
+  drinks: DrinkLine[];
   /** Each stat at the end of 本戦, capped. */
   params: Record<Stat, number>;
   total: number;
@@ -75,20 +77,22 @@ function lessonsOn(placement: Placement): Record<Stat, number> {
 }
 
 /** 本戦's counts for one placement and day 3; the P-items' drinks follow from the counts without them. */
-function countsFor(ctx: Context, placement: Placement, day3: Day3): Counts {
+function countsFor(ctx: Context, placement: Placement, day3: Day3): { counts: Counts; drinks: DrinkLine[] } {
   const input = { ...ctx.memory, day3, lessons: lessonsOn(placement), needs: ctx.needs, itemDrinks: 0 };
   const before = withPanel(honsenCounts(input), ctx.panel);
-  return withPanel(honsenCounts({ ...input, itemDrinks: itemDrinks(ctx.drinks, before) }), ctx.panel);
+  const drinks = drinkLines(ctx.drinks, before);
+  const added = drinks.reduce((sum, d) => sum + d.drinks, 0);
+  return { counts: withPanel(honsenCounts({ ...input, itemDrinks: added }), ctx.panel), drinks };
 }
 
 function evaluate(ctx: Context, placement: Placement, day3: Day3): Candidate {
-  const counts = countsFor(ctx, placement, day3);
+  const { counts, drinks } = countsFor(ctx, placement, day3);
   const lines = abilityLines(ctx.abilities, counts);
   const gains = scheduleGains(ctx.memory, placement);
   for (const line of lines) gains[line.effect.stat] += line.points;
   for (const extra of ctx.manual) gains[extra.stat] += extra.points;
   const params = capped(ctx.memory.params, gains, ctx.cap);
-  return { placement, day3, counts, lines, params, total: sumStats(params) };
+  return { placement, day3, counts, lines, drinks, params, total: sumStats(params) };
 }
 
 function rankLines(total: number, finalStar: number, provisional: boolean): RankLine[] {
@@ -110,7 +114,8 @@ export function bestTotal(
 ): BestResult {
   const { abilities, drinks } = deckSources(deck, new Map(data.cards.map((c) => [c.id, c])), items, panel.left ?? {});
   const wappen = items.find((item) => item.itemId === WAPPEN);
-  const wappenLeft = wappen === undefined ? 0 : (wappen.remaining ?? WAPPEN_FIRES_PER_RUN);
+  // Never more than the item's 20 fires per run, whatever was typed.
+  const wappenLeft = wappen === undefined ? 0 : Math.min(WAPPEN_FIRES_PER_RUN, wappen.remaining ?? WAPPEN_FIRES_PER_RUN);
   const held = data.held.filter((h) => deck.some((slot) => slot.cardId === h.id));
   // A held card always leaves something to decide: one entry even if its reason list is empty.
   const reasons = held.flatMap((h) => Array.from({ length: Math.max(1, h.reasons.length) }, (_, i) => uncountedKey(h.id, i)));

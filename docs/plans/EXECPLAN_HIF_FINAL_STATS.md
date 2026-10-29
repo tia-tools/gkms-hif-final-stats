@@ -29,8 +29,10 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-29 04:00Z) Open item O1 answered for 本戦 by the user (decisions G24–G26). 選抜 counts stay a stopgap (decision G27).
 - [x] (2026-10-29 05:10Z) Milestone 3 (issue #8, branch `feature/m3-honsen-abilities`), code: `src/engine/count.ts`, `honsen-profile.ts`, `abilities.ts` and `total.ts`. `bun test` 94 pass after the Codex reviews' fixes, type-check and lint clean, every guard seen red by mutation. The DMM sample comes to 6971, short of S5 by 73 (`Artifacts and Notes`).
 - [x] (2026-10-29 05:14Z) Milestone 3, acceptance: the user checked the DMM breakdown in `Artifacts and Notes` line by line and confirmed it.
-- [ ] Milestone 3 merged into `develop` by a pull request that closes #8.
-- [ ] Milestone 4: the form page and its Worker.
+- [x] (2026-10-29 05:30Z) Milestone 3 merged into `develop` by pull request #9 (merge commit 295b705), closing #8.
+- [x] (2026-10-29 06:31Z) Milestone 4 (issue #10, branch `feature/m4-page`), code: the page in `src/app/`, the Worker in `infra/worker/`, and the toolchain (G29). `bun test` 152 pass after the Codex review's fixes, type-check, lint and `bun run build` clean.
+- [x] (2026-10-29 06:31Z) Milestone 4, acceptance: the DMM sample entered by hand at `http://localhost:5173` (stats and bonuses typed, the six cards picked by name, the three P-items tapped and their digits typed) shows 6971 and S5 short by 73, as Milestone 3 computed. Two bugs found on the way are fixed, with tests.
+- [ ] Milestone 4 merged into `develop` by a pull request that closes #10. The Worker's `wrangler.toml` and deployment wait for Milestone 6 (the subdomain, O3).
 - [ ] Milestone 5: reading the screenshots (prototype first).
 - [ ] Milestone 6: deploy and CI gates.
 
@@ -78,6 +80,22 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 
 - Observation: The DMM memory is much closer to S5 than this plan first estimated: 73 short, not about 260. Its abilities add 569 rather than about 370. The P-drink count is what was underestimated: 12 drinks fire two +5 abilities for 120. Two other things add up: 4 SSR acquisitions on two +6 abilities, and 8 drink purchases on one +11. At its best placement, Da reaches 3208, so the cap takes 8.
   Evidence: `src/engine/total.test.ts`, which pins the total, the per-stat values and every ability line, each worked by hand in `Artifacts and Notes` before the code ran.
+
+- Observation: Under the Claude Code sandbox the dev server cannot open its port: `bun run dev` stops with `listen EPERM: operation not permitted ::1:5173`. It runs outside the sandbox. `sandbox.network.allowLocalBinding: true` in the user's settings would let it run inside. A command run outside the sandbox also gets a different `$TMPDIR`, so a log it writes there is not where a sandboxed command looks.
+  Evidence: the Milestone 4 walkthrough, 2026-10-29.
+
+- Observation: Entering the DMM sample by hand found two bugs that the component tests had not covered.
+  - The card picker's search box did not take focus when the picker opened, so a typed name went into whichever field last had focus and cleared the Vi bonus. `autoFocus` acts only on page load, not on an element added later, so the picker now focuses the box through a ref.
+  - A field given a width (`w-14`) still stretched across its cell, because the default `w-full` won.
+  Both now have tests that fail against the old code. The walkthrough also showed that the sibling's local image library lacks thumbnails for the two newest cards, so the dev server shows them blank. The deployed page reads the R2 copies instead.
+  Evidence: the Milestone 4 walkthrough in Chrome, 2026-10-29; `src/app/components.test.tsx`.
+
+- Observation: The Codex review of Milestone 4 found four faults, all fixed with tests:
+  - Typing ワッペン above 20 crashed the page, because `bestFinalStar` throws past 20 fires.
+  - With an unknown card, or a deck but no card data, the page computed as if those cards were absent. That shows a lower total for a deck other than the one on screen.
+  - A URL key containing `,` or `:` could not round-trip.
+  - The fires left of a P-item that only grants P-drinks never reached the panel. Seven cards in the data grant such an item.
+  Evidence: the Codex review of 2026-10-29 and commits 0c9765d, 1ac8d12 and ac3bd4b.
 
 
 ## Decision Log
@@ -214,6 +232,27 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
   - An unknown card id refuses the computation rather than dropping the card, because dropping it would lower the bound silently.
   Date/Author: 2026-10-29, agent.
 
+- Decision G29: The page uses the sibling's whole front-end stack, not just Vite and Preact: Tailwind 4 (`tailwindcss` with `@tailwindcss/vite`) for styling, and happy-dom (`@happy-dom/global-registrator`) for component tests under `bun test`, at the sibling's versions. Like the sibling's, the page is in Japanese only.
+  Rationale: The user chose this so the two sites share styling idioms and the components get tests. Japanese only follows the sibling's own page, whose players are the same.
+  Date/Author: 2026-10-29, user (stack); agent (language, following the sibling).
+
+- Decision G30: How the page is laid out and keeps its state.
+  - **Layout** (G26), modelled on the game's own screens:
+    - the stats as the 基本情報 tab shows them, スター性, 親愛度 and the cap selector above Vo/Da/Vi, each over its bonus percentage;
+    - the deck as the 編成 tab's two-by-three grid, with 相談リフレッシュ 残り below it;
+    - the P-items as the 「Pアイテム」 row: an icon per item, tapped when held, with the fires left typed under it;
+    - the result (total, rank table, breakdown, folded panel) beside the form on a wide screen and first on a phone, the best reachable rank highlighted and margins signed.
+  - **State in the URL**, with defaults left out. The keys are:
+    - `p`, `b` and `s` for the stats, bonuses and スター性; `a`, `r` and `m` for 親愛度, refreshes and メダルもじゃ;
+    - `d` for the deck as `cardId:level` slots, and `i` for held items as `itemId[:left]`;
+    - `o`, `f`, `c` and `l` for panel counts as `key:value`, `t` for the day-3 choice, and `u` for 「未計上」 entries as `key:stat:points`.
+  - **The cap level** also stays in the browser's localStorage (G8).
+  - **Card slots:** a new slot takes its rarity's 凸4 level. The picker sorts SSR first, then the newest. A deck card the data lacks, or a deck while the card data is missing, stops the computation and is named (G28): the page never shows a result for a deck other than the one in the form. With no card data and an empty deck, the memory alone is computed, as the manual form. Every value is clamped where the engine needs it (ワッペン to 20 fires), and an engine error is shown rather than thrown. Keys inside the URL's lists escape `,`, `:` and `%`.
+  Date/Author: 2026-10-29, agent.
+
+- Decision G31: The Worker's routing is a pure function, `route(request, env, fetchUpstream)`, tested with fakes. `/img/*` reuses the sibling's tested `img.ts` unchanged. `/data/cards.json` passes the sibling's file through with an hour's cache. A failure upstream is a 502 marked no-store, so the page falls back to the manual form and recovers as soon as the sibling does. The dev server answers the same two routes from local files (`vite.config.ts`). `wrangler.toml` waits for Milestone 6, since its route needs the subdomain (O3).
+  Date/Author: 2026-10-29, agent.
+
 
 ## Outcomes & Retrospective
 
@@ -222,6 +261,8 @@ Milestone 1 (2026-10-29) delivered the arithmetic that needs no card data, in `s
 Milestone 2 (2026-10-29) made the sibling's card data readable here. gakumas-supportcards publishes `/data/cards.v1.json` (its pull request #57 and ADR 0010). `src/data/load.ts` reads the file whole against the copied contract and refuses anything that does not match, naming where. Its fixture is the real file, and the DMM sample's six deck cards are in it. Two things remain outside this milestone. The file is not live until the sibling releases its `develop` into `main`, which Milestone 4's Worker needs. And held cards are only parsed here: what their reasons mean for the bound is Milestone 3's job, guided by the discovery in `Surprises & Discoveries` on what a held card's entry leaves out. One lesson: a plan's guess at another repository's format (a per-card `uncounted` field) was wrong in its field name and its placement. The contract was copied from the merged code, not from the plan.
 
 Milestone 3 (2026-10-29) completed the bound. `bestTotal` scores each of the 324 placements, on both day-3 choices, with the deck's abilities and P-items under 本戦's counts. Those counts are decision G24's play counts and G27's stopgap for 選抜; the panel can change every one (G25). The result is the best placement, its ability lines, the capped stats and every rank's margin. The DMM memory comes to 6971: S5 is out of reach by 73, and S4+ is clear by 2427. The user checked that breakdown line by line and confirmed it, which was this milestone's acceptance. One lesson: two of the hand-worked test expectations were wrong at first, both by forgetting that lowering a capped stat frees what the cap held. The tests caught the arithmetic, and the expectations were corrected by hand, not copied from the code's output.
+
+Milestone 4 (2026-10-29) put the bound on a page. Entered by hand at `http://localhost:5173`, the DMM sample reads 6971 and S5 short by 73, the same as Milestone 3. Each count can be changed in the folded panel, and the URL carries the whole form. The Worker is written and tested but not deployed; that is Milestone 6. One lesson: component tests in happy-dom passed while a real browser showed two plain usability bugs, a focus that never came and a width that never applied. A walkthrough of the real page caught both, and each is now pinned by a test.
 
 
 ## Context and Orientation
@@ -390,6 +431,10 @@ Milestone 4 builds the page.
   - serves `/img/w192/*` and `/img/w48/*` from the R2 bucket `tia-assets`, read-only, never `master/`;
   - proxies `/data/cards.json` from the sibling (G14) with a cache lifetime of one hour.
 - The dev server serves images from the sibling's local `scripts/images/out/` when present, as the sibling's own dev server does.
+- As built (decisions G30, G31):
+  - the page's logic sits in pure modules, each with tests: `src/app/form.ts` (the form and its URL), `compute.ts`, `panel.ts`, `items.ts`, `picker.ts`, `fields.ts`, `cap.ts` and `labels.ts` (adopted from the sibling);
+  - the components are `MemoryForm`, `DeckForm` with `CardPicker`, `ItemsForm`, `Result`, `Breakdown` and `CountPanel`, under `App.tsx`;
+  - the Worker is `infra/worker/worker.ts` with `img.ts` and `data.ts`.
 
 Milestone 5 reads the screenshots. It starts as a prototype, judged against the samples, and is promoted only if every sample field is read correctly or flagged as uncertain.
 - `src/reader/` (pure functions over an `ImageData`, with the canvas only at the edge):
@@ -462,7 +507,7 @@ On 2026-10-29 both hashes were `b989a77e…0d8881`, and `bun test src/data` prin
 
 Milestone 3: `bun test src/engine` passes, and `src/engine/total.test.ts` pins the DMM breakdown in `Artifacts and Notes` line by line; the user confirms that breakdown. On 2026-10-29 `bun test` printed `94 pass, 0 fail`.
 
-Milestone 4: `bun run dev`, open `http://localhost:5173`, and enter the DMM sample by hand. The S5 line shows "not reachable" with the shortfall, matching Milestone 3's number.
+Milestone 4: `bun run dev`, open `http://localhost:5173`, and enter the DMM sample by hand. The S5 line shows "not reachable" with the shortfall, matching Milestone 3's number. On 2026-10-29 it showed 6971, S5 −73 and S4+ +2427. Under the Claude Code sandbox, run the dev server outside it (see `Surprises & Discoveries`). `bun run build` writes `dist/`, about 45 kB of JavaScript; the card data loads at runtime.
 
 Milestone 5: `bun test src/reader` passes over the samples; in the page, dropping the two DMM screenshots fills the same form as the hand entry.
 
@@ -633,7 +678,9 @@ Milestone 3 built these, in `src/engine/` (the Milestone 1 exports above stand, 
     export interface Source { key: string; cardId: string; trigger: ParsedTrigger; left?: number }
     export interface Ability extends Source { effect: ClassifiedEffect }
     export interface DrinkSource extends Source { itemId: string; perFire: number }
-    export interface AbilityLine { key: string; cardId: string; effect: ClassifiedEffect; fires: number; points: number }
+    export interface AbilityLine { key: string; cardId: string; effect: ClassifiedEffect; left?: number; fires: number; points: number }
+    export interface DrinkLine extends DrinkSource { fires: number; drinks: number }   // DrinkSource also carries itemName
+    export function drinkLines(drinks: readonly DrinkSource[], counts: Counts): DrinkLine[];
     export function effectsAt(card: Card, level: number): readonly ClassifiedEffect[];
     export function deckSources(deck, cards: ReadonlyMap<string, Card>, items, overrides): { abilities: Ability[]; drinks: DrinkSource[] };
     export function needs(sources: readonly Source[], wappenLeft: number): Record<string, number>;
@@ -642,10 +689,26 @@ Milestone 3 built these, in `src/engine/` (the Milestone 1 exports above stand, 
     // total.ts
     export interface PanelState { occasions?; filters?; conditions?; left?; day3?: Day3; uncounted?: Record<string, { stat: Stat; points: number }> }   // uncounted keyed by uncountedKey
     export function uncountedKey(cardId: string, reason: number): string;   // "<cardId>#<reason index>"
-    export interface BestResult { placement; day3; counts; lines: AbilityLine[]; params; total; finalStar; ranks: RankLine[]; held: HeldCard[] }
+    export interface BestResult { placement; day3; counts; lines: AbilityLine[]; drinks: DrinkLine[]; params; total; finalStar; ranks: RankLine[]; held: HeldCard[] }
     export function bestTotal(memory: Memory, deck: readonly DeckSlot[], items: readonly HeldItem[], data: CardDataFile, panel: PanelState, cap: number): BestResult;
 
 `src/test-support/dmm.ts` holds the DMM sample as engine input, with the card fixture, for the tests.
+
+Milestone 4 built these:
+
+    // src/app/form.ts
+    export interface FormState { params; bonusPermil; star; affection; refreshesLeft; medalMoja; deck: (DeckSlot | null)[]; items: Record<string, number | null>; panel: PanelState }
+    export function readForm(q: URLSearchParams): FormState;   export function writeForm(form: FormState): URLSearchParams;
+    export function memoryOf(form: FormState): Memory | null;
+    // src/app/compute.ts
+    export function compute(form: FormState, data: CardDataFile | null, cap: number): Computed;   // { result, problem: null | { unknownCards } | { noCardData } | { error } }
+    // src/app/panel.ts
+    export function panelRows(result: BestResult, panel: PanelState, names: ReadonlyMap<string, string>): CountRow[];
+    export function withCount(panel: PanelState, kind: CountKind, key: string, value: number | null): PanelState;
+    // infra/worker/worker.ts, data.ts, img.ts
+    export function route(request: Request, env: Env, fetchUpstream: (url: string) => Promise<Response>): Promise<Response>;
+    export async function serveCardData(request: Request, fetchUpstream: (url: string) => Promise<Response>): Promise<Response>;
+    export async function serveImage(request: Request, bucket: ImageBucket): Promise<Response>;
 
 Open items, carried until answered:
 - O1: answered for 本戦 on 2026-10-29 (decision G24). 選抜 counts are still open; decision G27's stopgap stands in for them.
@@ -685,3 +748,9 @@ Revision note (2026-10-29, Milestone 3 built): Milestone 3's code is in place. C
 Revision note (2026-10-29, Codex review of Milestone 3): G28's 「未計上」 bullet now gives one entry per reason, each on its own stat, after the review found the per-card entry could put the bound too low. The `HeldItem` and `PanelState` lines in Interfaces now match the code.
 
 Revision note (2026-10-29, second Codex review of Milestone 3): two edge cases added to G28. A ワッペン without a digit counts its 20 fires, and a held card with an empty reason list still gets one 「未計上」 entry.
+
+Revision note (2026-10-29, Milestone 4 started): Milestone 3 merged (#9). Decision G29 records the page's stack, and Milestone 4 is issue #10.
+
+Revision note (2026-10-29, Milestone 4 built): the page and the Worker are built. Added decisions G30 (layout and URL state) and G31 (the Worker's shape), two discoveries (the sandbox and the dev server, and the walkthrough's bugs), the outcome, the as-built list and the exports. The page was accepted by entering the DMM sample by hand.
+
+Revision note (2026-10-29, Codex review of Milestone 4): G30 now refuses an unknown card or a deck without card data, as G28 says, rather than leaving it out. A discovery records the review's four fixes. Interfaces gain `AbilityLine.left`, `DrinkLine`, `BestResult.drinks` and `Computed`.

@@ -14,7 +14,7 @@ export default defineConfig({
   categories: { correctness: "error" },
   options: { typeAware: true },
   // .claude/worktrees holds other checkouts of this repository; the rest of .claude stays lintable.
-  ignorePatterns: ["node_modules/**", ".claude/worktrees/**"],
+  ignorePatterns: ["node_modules/**", "dist/**", ".claude/worktrees/**"],
   rules: {
     "max-lines-per-function": ["error", { max: 60, skipBlankLines: true, skipComments: true }],
     complexity: ["error", 15],
@@ -47,8 +47,16 @@ export default defineConfig({
     {
       // Tests group many cases under one describe; 120 lines, as in the sibling. Remove when no test
       // function needs more than 60.
-      files: ["**/*.test.ts"],
+      files: ["**/*.test.ts", "**/*.test.tsx"],
       rules: { "max-lines-per-function": ["error", { max: 120, skipBlankLines: true, skipComments: true }] },
+    },
+    {
+      // vite.config.ts serves local files in the dev server only: the card file at one fixed path
+      // and /img/* only after infra/worker/img.ts imageKey has matched the path against the
+      // game's image names. No path comes from outside input. Remove the entry if the dev server
+      // starts taking a file path from a request.
+      files: ["vite.config.ts"],
+      rules: { "security/detect-non-literal-fs-filename": "off" },
     },
   ],
 });

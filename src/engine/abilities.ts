@@ -26,6 +26,7 @@ export interface Ability extends Source {
 /** A held P-item that grants P-drinks when it fires (decision G13). */
 export interface DrinkSource extends Source {
   itemId: string;
+  itemName: string;
   perFire: number;
 }
 
@@ -33,6 +34,8 @@ export interface AbilityLine {
   key: string;
   cardId: string;
   effect: ClassifiedEffect;
+  /** The fires it had left, for the panel; absent when nothing limits them. */
+  left?: number;
   fires: number;
   points: number;
 }
@@ -83,7 +86,7 @@ function cardDrinks(card: Card, held: ReadonlyMap<string, HeldItem>, overrides: 
     if (item === undefined || grant.drinks === undefined) return [];
     const key = `${card.id}/${grant.itemId}`;
     const left = overrides[key] ?? item.remaining ?? grant.cap;
-    return [{ key, cardId: card.id, itemId: grant.itemId, perFire: grant.drinks.perFire, trigger: grant.drinks.trigger, left }];
+    return [{ key, cardId: card.id, itemId: grant.itemId, itemName: grant.itemName, perFire: grant.drinks.perFire, trigger: grant.drinks.trigger, left }];
   });
 }
 
@@ -121,11 +124,25 @@ export function needs(sources: readonly Source[], wappenLeft: number): Record<st
 export function abilityLines(abilities: readonly Ability[], counts: Counts): AbilityLine[] {
   return abilities.map((a) => {
     const fires = occurrences(a.trigger, counts, a.left);
-    return { key: a.key, cardId: a.cardId, effect: a.effect, fires, points: fires * a.effect.value };
+    const line = { key: a.key, cardId: a.cardId, effect: a.effect, fires, points: fires * a.effect.value };
+    return a.left === undefined ? line : { ...line, left: a.left };
+  });
+}
+
+/** A drink-granting P-item's fires under a set of counts, and the P-drinks they grant. */
+export interface DrinkLine extends DrinkSource {
+  fires: number;
+  drinks: number;
+}
+
+export function drinkLines(drinks: readonly DrinkSource[], counts: Counts): DrinkLine[] {
+  return drinks.map((d) => {
+    const fires = occurrences(d.trigger, counts, d.left);
+    return { ...d, fires, drinks: fires * d.perFire };
   });
 }
 
 /** The P-drinks the held P-items grant under `counts`. */
 export function itemDrinks(drinks: readonly DrinkSource[], counts: Counts): number {
-  return drinks.reduce((sum, d) => sum + occurrences(d.trigger, counts, d.left) * d.perFire, 0);
+  return drinkLines(drinks, counts).reduce((sum, d) => sum + d.drinks, 0);
 }
