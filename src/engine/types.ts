@@ -14,7 +14,7 @@ export interface Memory {
   affection: number;
   /** 相談リフレッシュ回数 残り, on the 編成 tab: each one is another 4 P-drinks to buy at the day-6 相談 (decision G24). */
   refreshesLeft: number;
-  /** The first P-item, the P-idol's own, is メダルもじゃ: 2 deletions at the 相談 (decision G24). */
+  /** The first P-item, the カスタム item, is the 黄 メダルもじゃ: 2 deletions at the 相談 (decisions G24, G33). */
   medalMoja: boolean;
 }
 

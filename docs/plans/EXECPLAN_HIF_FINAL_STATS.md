@@ -11,7 +11,7 @@ A player chasing S5 makes many 選抜試験メモリー and has to decide which 
 
 To see it working, run `bun run dev`, open `http://localhost:5173`, drop the two DMM sample screenshots, and read the S5 line. The worked example in `Artifacts and Notes` predicts what that line should say.
 
-The work is tracked on the GitHub board `tia-tools` project 1, one issue per milestone branch (decision G20): Milestone 1 was issue #4, and Milestone 2 is issue #6.
+The work is tracked on the GitHub board `tia-tools` project 1, one issue per milestone branch (decision G20): Milestones 1 to 5 are issues #4, #6, #8, #10 and #12.
 
 
 ## Progress
@@ -19,8 +19,8 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-28 14:40Z) Research: H.I.F. rating formula, 本戦 schedule, memory carry-over, prior art (gakumas-tools), art-matching feasibility on the samples. Findings in `Context and Orientation` and `Surprises & Discoveries`.
 - [x] (2026-10-28 15:10Z) Design interview (grill-me) with the user: decisions G1–G13 in the `Decision Log`.
 - [x] (2026-10-28 15:20Z) Repository scaffolded from `Taka499/project-template` at b52b8df into `~/Developer/gmks-hif-final-stats`; `docs/adr/0001-card-data-and-art-are-shared-with-gakumas-supportcards-at-runtime.md` written; this plan drafted.
-- [ ] Open item O2: decide whether the sample screenshots may be committed as test fixtures in this public repository. Needed by Milestone 5.
-- [ ] Open item O3: choose the tia.run subdomain. Needed by Milestone 6.
+- [x] (2026-10-29 09:20Z) Open item O2: the user allowed the sample screenshots to be committed as test fixtures as they are (decision G32).
+- [x] (2026-10-29 09:20Z) Open item O3: the subdomain is `gmks-hif-final-stats.tia.run` (decision G34).
 - [x] (2026-10-29 01:10Z) Milestone 1: toolchain, rating arithmetic, スター性 bound, schedule-only bound. Issue #4, branch `feature/m1-rating-schedule`: `bun test` 30 pass, type-check and lint clean, every guard seen red by mutation (`Artifacts and Notes`).
 - [x] (2026-10-29 02:07Z) Milestone 1 merged into `develop` by pull request #5 (merge commit 841b7be), closing #4.
 - [x] (2026-10-29 03:02Z) Milestone 2 (issue #6, branch `feature/m2-card-data`), sibling half: gakumas-supportcards publishes `dist/data/cards.v1.json`, worked by a session in that repository (decision G21). Its pull request #57 (`tia-tools/gakumas-supportcards`) merged into its `develop` as d08f3de. The file goes live only after the sibling's `develop` is released into `main`, which deploys. Milestone 4's Worker needs that; this milestone's tests do not.
@@ -32,8 +32,8 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-29 05:30Z) Milestone 3 merged into `develop` by pull request #9 (merge commit 295b705), closing #8.
 - [x] (2026-10-29 06:31Z) Milestone 4 (issue #10, branch `feature/m4-page`), code: the page in `src/app/`, the Worker in `infra/worker/`, and the toolchain (G29). `bun test` 152 pass after the Codex review's fixes, type-check, lint and `bun run build` clean.
 - [x] (2026-10-29 06:31Z) Milestone 4, acceptance: the DMM sample entered by hand at `http://localhost:5173` (stats and bonuses typed, the six cards picked by name, the three P-items tapped and their digits typed) shows 6971 and S5 short by 73, as Milestone 3 computed. Two bugs found on the way are fixed, with tests.
-- [ ] Milestone 4 merged into `develop` by a pull request that closes #10. The Worker's `wrangler.toml` and deployment wait for Milestone 6 (the subdomain, O3).
-- [ ] Milestone 5: reading the screenshots (prototype first).
+- [x] (2026-10-29 09:08Z) Milestone 4 merged into `develop` by pull request #11 (merge commit c2cd3b2), closing #10. The Worker's `wrangler.toml` and deployment wait for Milestone 6.
+- [ ] Milestone 5 (issue #12, branch `feature/m5-reader`): reading the screenshots (prototype first).
 - [ ] Milestone 6: deploy and CI gates.
 
 
@@ -96,6 +96,9 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
   - A URL key containing `,` or `:` could not round-trip.
   - The fires left of a P-item that only grants P-drinks never reached the panel. Seven cards in the data grant such an item.
   Evidence: the Codex review of 2026-10-29 and commits 0c9765d, 1ac8d12 and ac3bd4b.
+
+- Observation: The カスタム P-item is not one item but one of 180 combinations: a plan, a character, a pouch colour and an accessory, each its own image layer (decision G33). Its effect follows the combination, so its icon has to be read part by part. The 黄 メダルもじゃ also grants 2 P-drinks at the 相談, which the bound does not count yet: the メダルもじゃ flag sets only the deletions.
+  Evidence: `ProduceCustomizeItem.yaml` in `vertesan/gakumasu-diff`, read 2026-10-29. Its 180 entries carry `assetId1` to `assetId5`. The 黄 メダルもじゃ's text reads, in part, 相談選択時、ランダムな特定のPドリンクを2つ獲得.
 
 
 ## Decision Log
@@ -252,6 +255,23 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
 
 - Decision G31: The Worker's routing is a pure function, `route(request, env, fetchUpstream)`, tested with fakes. `/img/*` reuses the sibling's tested `img.ts` unchanged. `/data/cards.json` passes the sibling's file through with an hour's cache. A failure upstream is a 502 marked no-store, so the page falls back to the manual form and recovers as soon as the sibling does. The dev server answers the same two routes from local files (`vite.config.ts`). `wrangler.toml` waits for Milestone 6, since its route needs the subdomain (O3).
   Date/Author: 2026-10-29, agent.
+
+- Decision G32: The sample screenshots are committed as they are, as the reader's test fixtures (open item O2). They are the six pairs the user keeps in `temp/` (DMM, iPhone SE 3, iPhone 15 Pro Max three times, iPhone 16e), about 16 MB, and they show the user's idol, deck and the memory's date.
+  Rationale: Committed, the whole reader runs over real screenshots in every test run, CI included. The user accepted that the 16 MB stays in the history. The digit glyphs the reader matches are cut from these samples and ship with the page in any case.
+  Date/Author: 2026-10-29, user.
+
+- Decision G33: How the reader tells メダルもじゃ (open item O7). The first P-item slot holds the カスタム P-item, which the player builds during 選抜 from layers. The master data table `ProduceCustomizeItem` (in `vertesan/gakumasu-diff`) names each combination and its image layers:
+  - `assetId1`, `img_general_cstm-pitem_0{1,2,3}-1-001`: the base, one per plan;
+  - `assetId2`, the character: `04-2-001` くま, `002` 人形, `003` ロボ, `004` もじゃ, `005` インコ, `006` うさぎ;
+  - `assetId3`, the pouch colour: `04-3-001` 赤, `002` 緑, `003` 黄;
+  - `assetId4`, the accessory, or none: `04-4-001` 花, `002` リボン, `003` メダル, `004` 羽.
+
+  メダルもじゃ is character `04-2-004` with accessory `04-4-003`. Its effect depends on the colour. Only the 黄 one acts at the 相談: it grants 2 random P-drinks and 40 P-points, and halves the price of deleting skill cards there, once per produce. The user's G24 rule (2 deletions at the 相談) describes that one. The 赤 one instead upgrades a chosen card after an おでかけ. The reader recognises the character and the accessory and assumes 黄, so it reads no colour. The templates come from the layer images, extracted with the GkmasObjectManager tool that gakumas-supportcards' image pipeline already uses. This corrects G24's wording: the カスタム item is the first slot, and the P-idol's own item is the second.
+  Rationale: The user identified the purple character in the iPhone 15 Pro Max samples 01 and 03 as もじゃ, and the blue one in 02 as the robot. They pointed at the master data and GkmasObjectManager to check which layer is which. On the colour: "We can assume only yellow was chosen for now."
+  Date/Author: 2026-10-29, user (identification, the 黄 assumption, the source of the templates); agent (the layer table, read from the master data).
+
+- Decision G34: The page will live at `gmks-hif-final-stats.tia.run` (open item O3). That is the repository's name, the way the sibling lives at `gakumas-supportcards.tia.run`.
+  Date/Author: 2026-10-29, user.
 
 
 ## Outcomes & Retrospective
@@ -445,11 +465,12 @@ Milestone 5 reads the screenshots. It starts as a prototype, judged against the 
   - Counts × marks per tile.
   - Matches each support tile against the w192 thumbnails with the zoom-and-offset search of `Surprises & Discoveries`, refined around the best candidates.
   - Matches each P-item icon against G13's candidate set.
+  - Reads the first slot's カスタム item by its character and accessory layers, so メダルもじゃ sets the form's flag (G33).
 - Every read value carries a confidence. A low-confidence value is highlighted in the form, and a support tile shows its top three candidates.
-- Tests run the reader over the samples (per O2) and compare with hand-written expected values.
+- Tests run the reader over the committed samples (G32) and compare with hand-written expected values.
 
 Milestone 6 deploys.
-- `wrangler.toml` for `<O3>.tia.run` under the tia-tools Cloudflare account.
+- `wrangler.toml` for `gmks-hif-final-stats.tia.run` (G34) under the tia-tools Cloudflare account.
 - `.github/workflows/check.yml` and `deploy.yml`, adopted from the sibling with the same pinned actions and a gate comment at the top of each.
 - The GitHub ruleset via the user-level `protect-github.sh` (the repository is public).
 - Acceptance: the live site gives the same verdict for the DMM samples as `bun run dev` does.
@@ -657,7 +678,7 @@ Milestone 3 built these, in `src/engine/` (the Milestone 1 exports above stand, 
     // types.ts
     export interface Memory { params; bonusPermil; star; affection;
       refreshesLeft: number;               // 相談リフレッシュ回数 残り (G24)
-      medalMoja: boolean }                 // the first P-item is メダルもじゃ (G24)
+      medalMoja: boolean }                 // the first P-item is the 黄 メダルもじゃ (G24, G33)
     export interface DeckSlot { cardId: string; level: number }
     export const WAPPEN = "wappen";
     export interface HeldItem { itemId: string; remaining?: number }   // remaining absent: the item's cap if it has one, else no limit
@@ -712,9 +733,9 @@ Milestone 4 built these:
 
 Open items, carried until answered:
 - O1: answered for 本戦 on 2026-10-29 (decision G24). 選抜 counts are still open; decision G27's stopgap stands in for them.
-- O7: reading メダルもじゃ, a P-idol item, in the first P-item slot (decision G24). The sibling's 48 × 48 icons cover only items that support cards grant, so Milestone 5 needs its own template for it.
-- O2: whether the samples may be committed as fixtures (they show the user's deck and idol, nothing else personal), or must be cropped or kept local.
-- O3: the subdomain.
+- O7: answered on 2026-10-29 (decision G33). メダルもじゃ is a combination of the first slot's カスタム item, read by its layers, and assumed 黄.
+- O2: answered on 2026-10-29 (decision G32). The samples are committed as they are.
+- O3: answered on 2026-10-29 (decision G34). The subdomain is `gmks-hif-final-stats`.
 - O4: whether the game floors, rounds or ceils base × (1 + bonus). Settle it with one in-game lesson result before trusting margins of a point or two.
 - O5: the 親愛度 level in force at each 本戦 スター性 gain below Lv37. Until it is answered, decision G16's upper-bound reading applies.
 - O6: whether any trigger names a scenario token that separates 選抜 (produce-007) from 本戦 (produce-008). The sibling's `count.ts` treats a trigger of another scenario as 0. As of 2026-10-29, no trigger in the published data carries `scenario` (`Surprises & Discoveries`).
@@ -754,3 +775,5 @@ Revision note (2026-10-29, Milestone 4 started): Milestone 3 merged (#9). Decisi
 Revision note (2026-10-29, Milestone 4 built): the page and the Worker are built. Added decisions G30 (layout and URL state) and G31 (the Worker's shape), two discoveries (the sandbox and the dev server, and the walkthrough's bugs), the outcome, the as-built list and the exports. The page was accepted by entering the DMM sample by hand.
 
 Revision note (2026-10-29, Codex review of Milestone 4): G30 now refuses an unknown card or a deck without card data, as G28 says, rather than leaving it out. A discovery records the review's four fixes. Interfaces gain `AbilityLine.left`, `DrinkLine`, `BestResult.drinks` and `Computed`.
+
+Revision note (2026-10-29, Milestone 5 started): Milestone 4 merged (#11), and Milestone 5 is issue #12. The user answered O2, O7 and O3: decisions G32 (the samples are committed), G33 (メダルもじゃ read by its layers, assumed 黄, which also corrects G24's wording on the first slot) and G34 (the subdomain). A discovery records the カスタム item's layers and the 2 P-drinks the bound does not count yet.
