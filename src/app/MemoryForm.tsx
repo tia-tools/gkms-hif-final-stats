@@ -1,6 +1,6 @@
 import { STATS } from "../engine/types.ts";
 import { CAP_BY_LEVEL } from "./cap.ts";
-import { PercentField, WholeField } from "./Fields.tsx";
+import { PercentField, WholeField, mark } from "./Fields.tsx";
 import type { FormState } from "./form.ts";
 import { STAT_STYLE } from "./stats.ts";
 
@@ -12,19 +12,21 @@ interface Props {
   update: (patch: Partial<FormState>) => void;
   capLevel: number;
   onCapLevel: (level: number) => void;
+  /** The fields to check after reading a screenshot. */
+  check: ReadonlySet<string>;
 }
 
 /** Laid out as the memory's 基本情報 tab: スター性 and 親愛度, then each stat over its bonus. */
-export function MemoryForm({ form, update, capLevel, onCapLevel }: Props) {
+export function MemoryForm({ form, update, capLevel, onCapLevel, check }: Props) {
   return (
     <section class="grid grid-cols-3 gap-x-3 gap-y-2 rounded-lg bg-white p-3 shadow-sm">
       <label class="flex flex-col gap-1">
         <span class="text-sm text-orange-500">スター性</span>
-        <WholeField label="スター性" value={form.star} onChange={(star) => update({ star })} />
+        <WholeField class={mark(check.has("star"))} label="スター性" value={form.star} onChange={(star) => update({ star })} />
       </label>
       <label class="flex flex-col gap-1">
         <span class="text-sm text-rose-400">親愛度</span>
-        <select aria-label="親愛度" class={SELECT} value={form.affection} onChange={(e) => update({ affection: Number(e.currentTarget.value) })}>
+        <select aria-label="親愛度" class={`${SELECT} ${mark(check.has("affection"))}`} value={form.affection} onChange={(e) => update({ affection: Number(e.currentTarget.value) })}>
           {AFFECTION.map((lv) => (
             <option key={lv} value={lv}>
               {lv}
@@ -45,9 +47,9 @@ export function MemoryForm({ form, update, capLevel, onCapLevel }: Props) {
       {STATS.map((s) => (
         <div key={s} class="flex flex-col gap-1">
           <span class={`text-sm font-semibold ${STAT_STYLE[s].text}`}>{STAT_STYLE[s].name}</span>
-          <WholeField label={STAT_STYLE[s].name} value={form.params[s]} onChange={(v) => update({ params: { ...form.params, [s]: v } })} />
+          <WholeField class={mark(check.has(`params.${s}`))} label={STAT_STYLE[s].name} value={form.params[s]} onChange={(v) => update({ params: { ...form.params, [s]: v } })} />
           <div class="flex items-center gap-1">
-            <PercentField class="text-sm" label={`${STAT_STYLE[s].name}ボーナス`} value={form.bonusPermil[s]} onChange={(v) => update({ bonusPermil: { ...form.bonusPermil, [s]: v } })} />
+            <PercentField class={`text-sm ${mark(check.has(`bonus.${s}`))}`} label={`${STAT_STYLE[s].name}ボーナス`} value={form.bonusPermil[s]} onChange={(v) => update({ bonusPermil: { ...form.bonusPermil, [s]: v } })} />
             <span class="text-xs text-slate-500">%</span>
           </div>
         </div>

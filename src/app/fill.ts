@@ -90,3 +90,21 @@ export function fromHensei(form: FormState, read: HenseiRead, cards: ReadonlyMap
   if (!sure(read.refreshes)) unsure.push("refreshes");
   return { patch, unsure, alternatives: read.tiles.map((t) => t.cards.slice(1).map((c) => c.id)) };
 }
+
+/** The keys a form edit settles: each field the patch changes, so its mark to check goes. */
+export function touchedKeys(form: FormState, patch: Partial<FormState>): string[] {
+  const out: string[] = [];
+  for (const s of STATS) {
+    if (patch.params !== undefined && patch.params[s] !== form.params[s]) out.push(`params.${s}`);
+    if (patch.bonusPermil !== undefined && patch.bonusPermil[s] !== form.bonusPermil[s]) out.push(`bonus.${s}`);
+  }
+  const plain = { star: "star", affection: "affection", medalMoja: "medalMoja", refreshesLeft: "refreshes" } as const;
+  for (const [field, key] of Object.entries(plain)) if (field in patch) out.push(key);
+  for (const id of Object.keys(patch.items ?? {})) if (patch.items?.[id] !== form.items[id]) out.push(`items.${id}`);
+  patch.deck?.forEach((slot, i) => {
+    const old = form.deck[i];
+    if (slot?.cardId !== old?.cardId) out.push(`deck.${i}`);
+    if (slot?.level !== old?.level) out.push(`level.${i}`);
+  });
+  return out;
+}

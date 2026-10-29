@@ -4,7 +4,7 @@ import { WAPPEN } from "../engine/types.ts";
 import type { CustomRead } from "../reader/custom.ts";
 import type { HenseiRead, KihonRead, Read, TileRead } from "../reader/read.ts";
 import { CARD_DATA } from "../test-support/dmm.ts";
-import { fromHensei, fromKihon } from "./fill.ts";
+import { fromHensei, fromKihon, touchedKeys } from "./fill.ts";
 import { emptyForm } from "./form.ts";
 
 const sure = <T>(value: T): Read<T> => ({ value, confidence: 0.9 });
@@ -120,5 +120,16 @@ describe("fromHensei", () => {
     const form = { ...emptyForm(), deck: [{ cardId: "s_card-3-0062", level: 60 }, null, null, null, null, null] };
     const { patch } = fromHensei(form, hensei(six(() => tile("x", { cards: [] }))), CARDS, CARD_DATA.levelLimits);
     expect(patch.deck?.[0]).toEqual({ cardId: "s_card-3-0062", level: 60 });
+  });
+});
+
+describe("touchedKeys", () => {
+  test("an edit settles the fields it changes, and only those", () => {
+    const form = { ...emptyForm(), star: 810, params: { vocal: 1982, dance: 2468, visual: 1050 }, deck: [{ cardId: "a", level: 60 }, null, null, null, null, null] };
+    expect(touchedKeys(form, { params: { ...form.params, dance: 2469 } })).toEqual(["params.dance"]);
+    expect(touchedKeys(form, { star: 811 })).toEqual(["star"]);
+    expect(touchedKeys(form, { deck: [{ cardId: "a", level: 55 }, ...form.deck.slice(1)] })).toEqual(["level.0"]);
+    expect(touchedKeys(form, { deck: [{ cardId: "b", level: 60 }, ...form.deck.slice(1)] })).toEqual(["deck.0"]);
+    expect(touchedKeys(form, { items: { wappen: 3 } })).toEqual(["items.wappen"]);
   });
 });
