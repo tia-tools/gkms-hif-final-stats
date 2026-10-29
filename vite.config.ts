@@ -31,7 +31,14 @@ function localWorker(): Plugin {
     apply: "serve",
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        const found = localFile((req.url ?? "").split("?")[0] ?? "");
+        const path = (req.url ?? "").split("?")[0] ?? "";
+        const found = localFile(path);
+        // A missing image is a 404, as from the Worker, not the page the fallback would serve.
+        if (found === null && path.startsWith("/img/")) {
+          res.statusCode = 404;
+          res.end();
+          return;
+        }
         if (found === null) return next();
         res.setHeader("Content-Type", found.type);
         createReadStream(found.file).pipe(res);

@@ -69,7 +69,10 @@ export function useScreenshots(form: FormState, update: (patch: Partial<FormStat
     check,
     alternatives,
     read: (files) => {
-      read(files).catch(() => setStatus("unread"));
+      read(files).catch((error: unknown) => {
+        console.error("reading the screenshots failed", error);
+        setStatus("unread");
+      });
     },
     edit,
   };

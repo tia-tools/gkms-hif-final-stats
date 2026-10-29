@@ -22,10 +22,18 @@ export async function rasterOf(image: Blob): Promise<Raster> {
   return { width, height, data };
 }
 
-/** An image at this origin as a `Raster`, or null when the library lacks it. */
+/**
+ * An image at this origin as a `Raster`, or null when it cannot be had: the library lacks it, it
+ * is not an image, or it does not decode. One missing image must not stop the others.
+ */
 async function fetched(url: string): Promise<Raster | null> {
-  const res = await fetch(url);
-  return res.ok ? rasterOf(await res.blob()) : null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok || !(res.headers.get("content-type") ?? "").startsWith("image/")) return null;
+    return await rasterOf(await res.blob());
+  } catch {
+    return null;
+  }
 }
 
 /**
