@@ -8,6 +8,8 @@ const DMM: Memory = {
   bonusPermil: { vocal: 371, dance: 598, visual: 288 },
   star: 810,
   affection: 37,
+  refreshesLeft: 1,
+  medalMoja: false,
 };
 
 const flat = (vocal: number, dance: number, visual: number, bonus: Memory["bonusPermil"]): Memory => ({
@@ -15,6 +17,8 @@ const flat = (vocal: number, dance: number, visual: number, bonus: Memory["bonus
   bonusPermil: bonus,
   star: 0,
   affection: 37,
+  refreshesLeft: 0,
+  medalMoja: false,
 });
 
 describe("lessonGain", () => {
