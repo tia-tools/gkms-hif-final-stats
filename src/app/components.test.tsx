@@ -8,7 +8,8 @@ import type { PanelState } from "../engine/total.ts";
 import { CARD_DATA, DMM_DECK, DMM_ITEMS, DMM_MEMORY } from "../test-support/dmm.ts";
 import { compute } from "./compute.ts";
 import { CountPanel } from "./CountPanel.tsx";
-import { PercentField } from "./Fields.tsx";
+import { CardPicker } from "./CardPicker.tsx";
+import { PercentField, WholeField } from "./Fields.tsx";
 import { type FormState, emptyForm } from "./form.ts";
 import { ItemsForm } from "./ItemsForm.tsx";
 import { itemChoices } from "./items.ts";
@@ -93,5 +94,32 @@ describe("PercentField", () => {
     await act(() => type(input, "59.8"));
     expect(seen).toEqual([null, 598]);
     expect(input.value).toBe("59.8");
+  });
+});
+
+describe("CardPicker", () => {
+  test("puts the cursor in the search as it opens, so typing a name goes there (the walkthrough found it did not)", async () => {
+    await act(() => render(<CardPicker cards={CARD_DATA.cards} onPick={() => {}} onClose={() => {}} />, root));
+    expect(document.activeElement).toBe(root.querySelector('input[type="search"]'));
+  });
+
+  test("typing narrows the cards, and picking one hands it over", async () => {
+    const picked: string[] = [];
+    await act(() => render(<CardPicker cards={CARD_DATA.cards} onPick={(c) => picked.push(c.id)} onClose={() => {}} />, root));
+    await act(() => type(must(root.querySelector<HTMLInputElement>('input[type="search"]'), "the search"), "もうすぐ本番"));
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('[role="dialog"] .grid button')];
+    expect(buttons.map((b) => b.textContent)).toEqual(["もうすぐ本番ですね"]);
+    await act(() => buttons[0]?.click());
+    expect(picked).toEqual(["s_card-3-0099"]);
+  });
+});
+
+describe("WholeField", () => {
+  test("fills its cell, unless it is given a width (the walkthrough found the width ignored)", async () => {
+    await act(() => render(<WholeField label="a" value={1} onChange={() => {}} />, root));
+    expect(root.querySelector("input")?.className.split(" ")).toContain("w-full");
+    await act(() => render(<WholeField label="b" class="w-14" value={1} onChange={() => {}} />, root));
+    const classes = root.querySelector("input")?.className.split(" ") ?? [];
+    expect([classes.includes("w-14"), classes.includes("w-full")]).toEqual([true, false]);
   });
 });

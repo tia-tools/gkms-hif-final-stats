@@ -1,7 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { percentText, permilOf, wholeOf } from "./fields.ts";
 
-const INPUT = "w-full min-w-0 rounded border border-slate-300 bg-white px-2 py-1 text-right tabular-nums focus:border-slate-500 focus:outline-none";
+const INPUT = "min-w-0 rounded border border-slate-300 bg-white px-2 py-1 text-right tabular-nums focus:border-slate-500 focus:outline-none";
 
 interface FieldProps {
   value: number | null;
@@ -10,8 +10,13 @@ interface FieldProps {
   class?: string;
 }
 
+/** Fields fill their cell unless a width is given. */
+function width(extra: string): string {
+  return /(^|\s)w-/.test(extra) ? extra : `w-full ${extra}`;
+}
+
 export function WholeField({ value, onChange, label, class: extra = "" }: FieldProps) {
-  return <input type="text" inputMode="numeric" aria-label={label} class={`${INPUT} ${extra}`} value={value ?? ""} onInput={(e) => onChange(wholeOf(e.currentTarget.value))} />;
+  return <input type="text" inputMode="numeric" aria-label={label} class={`${INPUT} ${width(extra)}`} value={value ?? ""} onInput={(e) => onChange(wholeOf(e.currentTarget.value))} />;
 }
 
 /** A percentage with one decimal, held as tenths; the text stays as typed until it reads as a number. */
@@ -25,7 +30,7 @@ export function PercentField({ value, onChange, label, class: extra = "" }: Fiel
       type="text"
       inputMode="decimal"
       aria-label={label}
-      class={`${INPUT} ${extra}`}
+      class={`${INPUT} ${width(extra)}`}
       value={text}
       onInput={(e) => {
         setText(e.currentTarget.value);

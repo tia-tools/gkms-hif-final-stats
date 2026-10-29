@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { Card, CardType, Rarity } from "../data/contract.ts";
 import { Chip } from "./Fields.tsx";
 import { thumbnailUrl } from "./images.ts";
@@ -25,6 +25,9 @@ interface Props {
 export function CardPicker({ cards, onPick, onClose }: Props) {
   const [filter, setFilter] = useState<PickerFilter>({ query: "", type: null, rarity: null });
   const shown = useMemo(() => pickable(cards, filter), [cards, filter]);
+  // The picker opens after the page has loaded, where `autofocus` does nothing: focus the search by hand.
+  const search = useRef<HTMLInputElement>(null);
+  useEffect(() => search.current?.focus(), []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === "Escape") onClose();
@@ -36,7 +39,7 @@ export function CardPicker({ cards, onPick, onClose }: Props) {
     <div class="fixed inset-0 z-30 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
       <div role="dialog" aria-label="サポートカード" class="flex max-h-[85vh] w-full max-w-3xl flex-col gap-2 rounded-t-lg bg-white p-3 sm:rounded-lg" onClick={(e) => e.stopPropagation()}>
         <div class="flex flex-wrap items-center gap-2">
-          <input type="search" aria-label="カード名" placeholder="カード名" class="min-w-0 flex-1 rounded border border-slate-300 px-2 py-1" value={filter.query} onInput={(e) => setFilter({ ...filter, query: e.currentTarget.value })} />
+          <input ref={search} type="search" aria-label="カード名" placeholder="カード名" class="min-w-0 flex-1 rounded border border-slate-300 px-2 py-1" value={filter.query} onInput={(e) => setFilter({ ...filter, query: e.currentTarget.value })} />
           {TYPES.map(([type, label]) => (
             <Chip key={type} label={label} on={filter.type === type} onClick={() => setFilter({ ...filter, type: filter.type === type ? null : type })} />
           ))}
