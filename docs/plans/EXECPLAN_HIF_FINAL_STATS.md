@@ -11,7 +11,7 @@ A player chasing S5 makes many 選抜試験メモリー and has to decide which 
 
 To see it working, run `bun run dev`, open `http://localhost:5173`, drop the two DMM sample screenshots, and read the S5 line. The worked example in `Artifacts and Notes` predicts what that line should say.
 
-The work is tracked on the GitHub board `tia-tools` project 1, one issue per milestone branch (decision G20): Milestones 1 to 5 are issues #4, #6, #8, #10 and #12.
+The work is tracked on the GitHub board `tia-tools` project 1, one issue per milestone branch (decision G20): Milestones 1 to 6 are issues #4, #6, #8, #10, #12 and #15.
 
 
 ## Progress
@@ -37,8 +37,9 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-29 11:20Z) Milestone 5, the pictures: every sample tile matched to its own card among all 210, every サポート icon matched or left unknown, and every カスタム item's character and accessory read; a painted メダルもじゃ is recognised (G36, G37).
 - [x] (2026-10-29 11:20Z) Milestone 5, the page (G38): the DMM pair dropped into the page at `http://localhost:5173` fills the whole form with nothing to check, and the result reads 6971, S5 short by 73, as the hand entry did. The scrolled SE3 pair rings 親愛度, which its screenshot hides. `bun test` 225 pass; type-check, lint and `bun run build` clean (93 kB of JavaScript).
 - [x] (2026-10-29 12:02Z) Milestone 5 reviewed by Codex in six rounds, each on a fresh snapshot that it did not write back from: 7, 5, 3, 1 and 1 findings, each fixed with a test that fails against the old code or answered (`Surprises & Discoveries`), then `CODEX VERDICT: LGTM`. On the branch head `bun test` passes 241, type-check, lint and `bun run build` are clean, and the DMM pair still reads 6971 in Chrome.
-- [ ] Milestone 5 merged into `develop` by a pull request that closes #12.
-- [ ] Milestone 6: deploy and CI gates.
+- [x] (2026-10-29 12:56Z) Milestone 5 merged into `develop` by pull request #14 (merge commit ede44c3), closing #12.
+- [x] (2026-10-29 13:08Z) The sibling's card file is live: gakumas-supportcards released its `develop` into `main` (its pull request #58, merge ad66896). `https://gakumas-supportcards.tia.run/data/cards.v1.json` answers 200, format 1, 210 cards, and is byte-identical to `src/data/fixtures/cards.v1.json` (SHA-256 `b989a77e…`).
+- [ ] Milestone 6 (issue #15, branch `feature/m6-deploy`): deploy and CI gates. The GitHub ruleset is already in place: "protect main, master and develop", active, refusing deletion and non-fast-forward pushes.
 
 
 ## Surprises & Discoveries
@@ -934,3 +935,5 @@ Revision note (2026-10-29, Codex review of Milestone 4): G30 now refuses an unkn
 Revision note (2026-10-29, Milestone 5 started): Milestone 4 merged (#11), and Milestone 5 is issue #12. The user answered O2, O7 and O3: decisions G32 (the samples are committed), G33 (メダルもじゃ read by its layers, assumed 黄, which also corrects G24's wording on the first slot) and G34 (the subdomain). A discovery records the カスタム item's layers and the 2 P-drinks the bound does not count yet.
 
 Revision note (2026-10-29, Milestone 5 built): the reader and its page are built. Added decisions G36 (the image snapshot), G37 (the カスタム layers as derived templates) and G38 (how a screenshot fills the page), four discoveries (the zoom range, the browser failure, the sandbox and TLS, the DMM item identities), the regeneration steps, the mutation records, the exports and the outcome.
+
+Revision note (2026-10-29, Milestone 6 started): Milestone 5 merged (#14). The sibling released its card file, and Milestone 6 is issue #15. Its ruleset was already applied when the repository was created.
