@@ -29,8 +29,8 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-29 04:00Z) Open item O1 answered for 本戦 by the user (decisions G24–G26). 選抜 counts stay a stopgap (decision G27).
 - [x] (2026-10-29 05:10Z) Milestone 3 (issue #8, branch `feature/m3-honsen-abilities`), code: `src/engine/count.ts`, `honsen-profile.ts`, `abilities.ts` and `total.ts`. `bun test` 94 pass after the Codex reviews' fixes, type-check and lint clean, every guard seen red by mutation. The DMM sample comes to 6971, short of S5 by 73 (`Artifacts and Notes`).
 - [x] (2026-10-29 05:14Z) Milestone 3, acceptance: the user checked the DMM breakdown in `Artifacts and Notes` line by line and confirmed it.
-- [ ] Milestone 3 merged into `develop` by a pull request that closes #8.
-- [ ] Milestone 4: the form page and its Worker.
+- [x] (2026-10-29 05:30Z) Milestone 3 merged into `develop` by pull request #9 (merge commit 295b705), closing #8.
+- [ ] Milestone 4 (issue #10, branch `feature/m4-page`): the form page and its Worker.
 - [ ] Milestone 5: reading the screenshots (prototype first).
 - [ ] Milestone 6: deploy and CI gates.
 
@@ -213,6 +213,10 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
   - Each reason a held deck card gives (G12) is one 「未計上」 entry, with the player's points on the stat they choose. 「暫定」 stays until every reason has a value, 0 included. The reasons cannot tell an effect left out of the card from one kept in it and counted here (`Surprises & Discoveries`). So every reason is listed, and the player enters 0 for one whose effect is already counted. A held card whose reason list is empty still gets one entry. A first version took one entry per card, on one stat. The Codex review of 2026-10-29 found that a card with uncounted abilities on two stats would then lose points to one stat's cap, putting the bound too low.
   - An unknown card id refuses the computation rather than dropping the card, because dropping it would lower the bound silently.
   Date/Author: 2026-10-29, agent.
+
+- Decision G29: The page uses the sibling's whole front-end stack, not just Vite and Preact: Tailwind 4 (`tailwindcss` with `@tailwindcss/vite`) for styling, and happy-dom (`@happy-dom/global-registrator`) for component tests under `bun test`, at the sibling's versions. Like the sibling's, the page is in Japanese only.
+  Rationale: The user chose this so the two sites share styling idioms and the components get tests. Japanese only follows the sibling's own page, whose players are the same.
+  Date/Author: 2026-10-29, user (stack); agent (language, following the sibling).
 
 
 ## Outcomes & Retrospective
@@ -685,3 +689,5 @@ Revision note (2026-10-29, Milestone 3 built): Milestone 3's code is in place. C
 Revision note (2026-10-29, Codex review of Milestone 3): G28's 「未計上」 bullet now gives one entry per reason, each on its own stat, after the review found the per-card entry could put the bound too low. The `HeldItem` and `PanelState` lines in Interfaces now match the code.
 
 Revision note (2026-10-29, second Codex review of Milestone 3): two edge cases added to G28. A ワッペン without a digit counts its 20 fires, and a held card with an empty reason list still gets one 「未計上」 entry.
+
+Revision note (2026-10-29, Milestone 4 started): Milestone 3 merged (#9). Decision G29 records the page's stack, and Milestone 4 is issue #10.
