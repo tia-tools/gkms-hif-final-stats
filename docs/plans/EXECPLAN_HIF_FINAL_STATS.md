@@ -45,7 +45,13 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
   - tests pinning both, and `infra/worker/README.md` with the deploy and verify steps.
 
   `bun test` passes 249; type-check, lint and build are clean. The GitHub ruleset was already in place: "protect main, master and develop", active, refusing deletion and non-fast-forward pushes.
-- [ ] Milestone 6, the deployment: the two repository secrets set, a first deploy, and the live site reading the DMM pair as 6971 (G39).
+- [x] (2026-10-29 13:21Z) Milestone 6 merged into `develop` by pull request #16 (merge commit c4abf62), closing #15. Its CI run passed on Linux.
+- [x] (2026-10-29 15:13Z) Milestone 6, the deployment (G39):
+  - **Setup:** the user did the one-time setup: a first deploy by hand, the API token, and the two repository secrets, both listed by name (set at 15:04Z and 15:05Z). That first deploy already served `develop`'s build, the same content-hashed `index-ZNFxg2yT.js` and `index-BoUCNPB-.css`.
+  - **Release:** pull request #17 from `develop` into `main` merged as 8931677. Its tree equals `develop`'s, on which all five gates passed before the merge (`bun test` 249 pass).
+  - **Deploy:** `deploy.yml`'s run on that merge passed every gate and its deploy step in 43 s. Its one annotation is GitHub's notice that `ubuntu-latest` moves to Ubuntu 26.
+  - **Verify:** every check in `infra/worker/README.md` § Verify passes on `https://gmks-hif-final-stats.tia.run`, and its `/data/cards.json` is byte-identical to `src/data/fixtures/cards.v1.json`.
+  - **Acceptance:** dropped into the live page in Chrome, the DMM pair reads 6971, S5 short by 73, with no field ringed and all 21 images loaded, the same as `bun run dev`. This is Milestone 6's acceptance.
 
 
 ## Surprises & Discoveries
@@ -400,6 +406,8 @@ It uses no OCR and no model: anchors, Otsu thresholds, templates cut from the sa
 - **Browser failures:** a browser can fail where every test passes. Here one missing thumbnail took the whole read down, so the image edge now degrades per image.
 
 Milestone 4 (2026-10-29) put the bound on a page. Entered by hand at `http://localhost:5173`, the DMM sample reads 6971 and S5 short by 73, the same as Milestone 3. Each count can be changed in the folded panel, and the URL carries the whole form. The Worker is written and tested but not deployed; that is Milestone 6. One lesson: component tests in happy-dom passed while a real browser showed two plain usability bugs, a focus that never came and a width that never applied. A walkthrough of the real page caught both, and each is now pinned by a test.
+
+Milestone 6 (2026-10-29) put the page live at `https://gmks-hif-final-stats.tia.run`. One Worker serves the built page, the sibling's thumbnails and icons from `tia-assets`, and its card file. `check.yml` gates every pull request into `develop`. A release into `main` runs the same gates again in `deploy.yml`, which then deploys. Dropped into the live page, the DMM pair reads 6971, S5 short by 73, as it does in `bun run dev`. One lesson: the deploy guidance adopted from the sibling's README called the route permission Workers Routes: Edit, where Cloudflare's is Write, and missed that Workers Editor cannot create a Worker. Adopted documentation needs the same check against the provider's own pages as adopted code gets from its tests. Here, the Codex review caught both.
 
 
 ## Context and Orientation
@@ -962,3 +970,5 @@ Revision note (2026-10-29, Milestone 5 built): the reader and its page are built
 Revision note (2026-10-29, Milestone 6 started): Milestone 5 merged (#14). The sibling released its card file, and Milestone 6 is issue #15. Its ruleset was already applied when the repository was created.
 
 Revision note (2026-10-29, Milestone 6 built): the Worker's `wrangler.toml`, the check and deploy workflows, their tests and the Worker's README. Added decision G39 (the deployment) and the steps. The deployment itself waits for the repository secrets and a first deploy.
+
+Revision note (2026-10-29, Milestone 6 deployed): Milestone 6 merged (#16), the user did the one-time setup, and the release #17 merged into `main` and deployed. Progress records the deploy run, the live checks and the DMM pair read on the live page. Outcomes records Milestone 6's outcome.
