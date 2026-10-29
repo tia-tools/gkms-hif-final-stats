@@ -19,15 +19,15 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-28 14:40Z) Research: H.I.F. rating formula, 本戦 schedule, memory carry-over, prior art (gakumas-tools), art-matching feasibility on the samples. Findings in `Context and Orientation` and `Surprises & Discoveries`.
 - [x] (2026-10-28 15:10Z) Design interview (grill-me) with the user: decisions G1–G13 in the `Decision Log`.
 - [x] (2026-10-28 15:20Z) Repository scaffolded from `Taka499/project-template` at b52b8df into `~/Developer/gmks-hif-final-stats`; `docs/adr/0001-card-data-and-art-are-shared-with-gakumas-supportcards-at-runtime.md` written; this plan drafted.
-- [ ] Open item O1: the user supplies typical 選抜 and 本戦 play counts (route sheet). Needed by Milestone 3.
 - [ ] Open item O2: decide whether the sample screenshots may be committed as test fixtures in this public repository. Needed by Milestone 5.
 - [ ] Open item O3: choose the tia.run subdomain. Needed by Milestone 6.
 - [x] (2026-10-29 01:10Z) Milestone 1: toolchain, rating arithmetic, スター性 bound, schedule-only bound. Issue #4, branch `feature/m1-rating-schedule`: `bun test` 30 pass, type-check and lint clean, every guard seen red by mutation (`Artifacts and Notes`).
 - [x] (2026-10-29 02:07Z) Milestone 1 merged into `develop` by pull request #5 (merge commit 841b7be), closing #4.
 - [x] (2026-10-29 03:02Z) Milestone 2 (issue #6, branch `feature/m2-card-data`), sibling half: gakumas-supportcards publishes `dist/data/cards.v1.json`, worked by a session in that repository (decision G21). Its pull request #57 (`tia-tools/gakumas-supportcards`) merged into its `develop` as d08f3de. The file goes live only after the sibling's `develop` is released into `main`, which deploys. Milestone 4's Worker needs that; this milestone's tests do not.
 - [x] (2026-10-29 03:10Z) Milestone 2, this repository's half: `src/data/contract.ts`, `src/data/load.ts` and the fixture `src/data/fixtures/cards.v1.json`. `bun test` 46 pass, type-check and lint clean, every loader guard seen red by mutation (`Artifacts and Notes`).
-- [ ] Milestone 2 merged into `develop` by a pull request that closes #6.
-- [ ] Milestone 3: support abilities and P-items in 本戦; the full best-case bound.
+- [x] (2026-10-29 03:40Z) Milestone 2 merged into `develop` by pull request #7 (merge commit b1363b2), closing #6.
+- [x] (2026-10-29 04:00Z) Open item O1 answered for 本戦 by the user (decisions G24–G26). 選抜 counts stay a stopgap (decision G27).
+- [ ] Milestone 3 (issue #8, branch `feature/m3-honsen-abilities`): support abilities and P-items in 本戦; the full best-case bound.
 - [ ] Milestone 4: the form page and its Worker.
 - [ ] Milestone 5: reading the screenshots (prototype first).
 - [ ] Milestone 6: deploy and CI gates.
@@ -67,6 +67,12 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 
 - Observation: No trigger in the published data carries a `scenario` field today. No support card ability or card-granted P-item in it is limited to one scenario, so open item O6 has no case to handle yet. A card added later could still bring one.
   Evidence: `jq '[.. | objects | select(has("occasion")) | keys[]] | unique'` over the fixture prints `["conditions","filters","occasion"]` (2026-10-29, sibling d08f3de).
+
+- Observation: Two of the DMM deck's P-items differ from how this plan first described them. 素敵なお仕事 (もうすぐ本番ですね) fires on any skill-card change while Vi is 400 or more, not only on a 「基本」 change. 完全制覇でポン (なぜこんなところにッ！？) needs Da 700 or more, and each fire also grants one P-drink. A third card item, ふわふわでもこもこ (ふわふわでワクワク), grants two P-drinks on every Dance SP lesson end with no fire limit, so with it the drink count depends on where the lessons go.
+  Evidence: the effects at the deck's levels in `src/data/fixtures/cards.v1.json` (2026-10-29).
+
+- Observation: The DMM memory holds ワッペン (4 left), 完全制覇でポン (1 left) and 素敵なお仕事 (1 left), but not ふわふわでもこもこ. Its other P-items give no parameters: a カスタム item, the P-idol's own item (sunglasses), and two サポート items the card data does not list as counted (an H.I.F file and a lamp). The 編成 tab ends with three counts: スキルカード再抽選可能回数 残り2, スキルカード除去可能回数 残り0 and 相談リフレッシュ回数 残り1.
+  Evidence: the two DMM screenshots in `temp/dmm/01/`. The サポート icons were matched by eye against the sibling's 48 × 48 icons `img_general_pitem_3-263` (coloured balls) and `img_general_pitem_3-352` (a clipboard). `img_general_pitem_2-004` (flowers in a glass) is not in the row. The user confirmed 完全制覇でポン's 1.
 
 
 ## Decision Log
@@ -163,6 +169,35 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
 
 - Decision G23: `parseCardData` is all or nothing. One value that does not match the contract refuses the whole file, and the error names its path (e.g. `cards[0].breakpoints[0].effects[0].stat: expected vocal | dance | visual`). An empty card list is refused too. A field the contract does not name is dropped, not refused.
   Rationale: `Idempotence and Recovery` requires that the page never computes with a partial card list; a refused file sends it to the manual form instead. Unknown fields are dropped because the sibling's ADR 0010 makes every change to the shape bump the format version. A new field without a bump would break that rule, and refusing the file would take the card pickers down for something the computation does not read.
+  Date/Author: 2026-10-29, agent.
+
+- Decision G24: The 本戦 play counts, as the user gave them (open item O1 for 本戦). Every count is a default the panel can change (G25).
+  - P-drinks bought at the day-6 相談: 4 per lineup, and 4 more per remaining 相談リフレッシュ (shown on the 編成 tab as 相談リフレッシュ回数 残りN). That is 8 with 1 left, 4 with none.
+  - P-drinks acquired: 1 on day 3, plus the 相談 purchases, plus 2 at the インターバル, plus the drinks of each drink-granting P-item's fires (G13). For the DMM memory: 1 + 8 + 2 + 1 = 12.
+  - Skill cards deleted: 0, or 2 at the 相談 when the memory's first P-item, the P-idol's own, is メダルもじゃ.
+  - Skill cards acquired: as many as the remaining capped acquisition triggers can use, and at least 1 (the day-3 差し入れ card). Those triggers are ワッペン's remaining fires (to fill スター性) and each capped acquisition ability or P-item; one card can fire them all. Skill-card changes work the same way: the two 授業 changes, or more if a capped change trigger has more fires left, made at the インターバル. So do the インターバル's other actions: card purchases, upgrades and customisations, with 0 when nothing calls for them.
+  - Uncapped abilities fire only on these counts. The bound never adds actions just to fire an uncapped ability more.
+  - Day 3 is usually 差し入れ; G4's per-deck choice stays.
+  Rationale: the user's answers of 2026-10-29: "the choice leans to a) fulfilling the スター性 acquiring as cap, b) trying to achieve the supportcard ability as possible"; "mostly all 8 p-drinks will be purchased … since 1 相談 has 4 drinks, and refresh add 4"; at the インターバル "mostly 2 P-drinks, and buy cards that satisfy remaining P-items trigger"; deletions "mostly no, unless the first P-item is メダルもじゃ, in 相談 2 times"; "Don't try to infinitely satisfy any uncapped ability, since that's impossible."
+  Date/Author: 2026-10-29, user.
+
+- Decision G25: Every count the bound uses is derived, shown in the panel, and adjustable there: each occasion's count, each filter's count (for example how many of the acquired cards are SSR), each condition, and each ability's remaining fires. A filter's count defaults to its occasion's count, as if every occurrence were the kind the trigger asks for; this is the upper bound, and the player lowers it where it is wrong. A condition defaults to met every time.
+  Rationale: the user, 2026-10-29: "Since this is a simulation, we can only provide a rough number, so the derived parameters should be shown to the user and adjustable by the user."
+  Date/Author: 2026-10-29, user.
+
+- Decision G26: The page follows one layout rule: "Avoid unnecessary secondary labels and descriptions. Let the layout do the explaining." Milestone 4 applies it to the form, the panel, the rank table and the breakdown.
+  Date/Author: 2026-10-29, user.
+
+- Decision G27: Until the user gives 選抜 counts, G3's "fires used in 選抜" come from a stopgap profile. It takes the sibling's whole-run 汎用コンテ育成 profile and subtracts the 本戦 part that profile's own choices imply (本戦 day 3 差し入れ, 2 P-drinks at the インターバル, 2 授業 changes, the H.I.F応援棒 item). The result:
+  - EndLesson 6, all SP, any stat;
+  - EndStepEventSchool 4, EndAudition 3, EndBeforeAuditionRefresh 3;
+  - StartPresent 3, EndStepEventActivity 1, StartShop 3;
+  - GetProduceCard 19 (SSR 7, mental 13, active 7, effect groups 10 unless named: 好印象 14, 元気 12);
+  - DeleteProduceCard 9, ChangeProduceCard 2 (「基本」 2), CustomizeProduceCard 2;
+  - GetProduceDrink 4, GetProduceItem 5;
+  - every other occasion 0.
+  As G3 assumes, 選抜 is taken to have used every fire it could: a lesson-stat filter counts all 6 lessons. With this profile, the DMM deck's 「基本」-change ability has 3 − 2 = 1 fire left, as the user reported, and ふわふわでワクワク's exam-end ability (cap 2) has none, as observed.
+  Rationale: The plan allowed this stopgap until 選抜 counts are given, and only capped abilities use it. Every result is shown and adjustable (G25).
   Date/Author: 2026-10-29, agent.
 
 
@@ -315,8 +350,8 @@ Milestone 3 counts what the deck's support abilities and P-items add in 本戦 a
     - `ChangeProduceCard` at least 2 (the 授業);
     - `GetProduceItem` 1 (the H.I.F応援棒 item granted after round 1);
     - `ProduceStart` 0.
-  - The play-dependent counts, from open item O1.
-- The same file holds a 選抜 profile for G3's default "fires used in 選抜", also from O1. Until O1 is answered, the 選抜 counts can be derived as the sibling's 汎用コンテ育成 profile in `data/scenarios/hif.ts` minus the 本戦 counts, and that stopgap is recorded in the `Decision Log`.
+  - The play-dependent counts of decision G24: P-drinks bought and acquired, deletions, and the skill-card acquisitions, changes and インターバル actions that follow the deck's remaining capped triggers.
+- The same file holds the 選抜 stopgap profile of decision G27, for G3's default "fires used in 選抜".
 - `src/engine/abilities.ts` ports the counting rule of the sibling's `src/engine/count.ts`: occasion count, narrowed by filters, conditions at their maximum unless lowered, then capped.
   - It is applied to remaining fires, not to fresh caps: G3 for skills, the screenshot's digit for items.
   - It drops what G15 excludes.
@@ -454,7 +489,7 @@ Their 本戦-relevant abilities, from the sibling's data:
 - Pドリンク獲得 +5 on two cards;
 - SSR card acquisition +6 on two cards;
 - 放っておけない気になる子: 差し入れ +17, 相談 drink purchase +11, deletion +11;
-- the items 素敵なお仕事 (Vi+25 per 「基本」 change, cap 3) and 完全制覇でポン (Da+30 per 全力 card acquired, cap 2).
+- the items 素敵なお仕事 (Vi+25 per skill-card change while Vi ≥ 400, cap 3, 1 left) and 完全制覇でポン (Da+30 per 全力 card acquired while Da ≥ 700, cap 2, 1 left, and one P-drink per fire). This line first said 素敵なお仕事 fired on 「基本」 changes; the card data says otherwise (`Surprises & Discoveries`).
 
 A rough total is 6410 + about 370, short of 7044. Milestone 3 replaces this estimate with the exact figure.
 
@@ -558,7 +593,8 @@ At the end of Milestone 3 these must exist:
 `PanelState` holds the overrides of G3, G4 and G12; `BestResult` holds the placement, the ability lines, the per-stat totals and the `RankLine` list. Exact shapes are fixed in Milestone 3 and recorded here.
 
 Open items, carried until answered:
-- O1: typical 選抜 and 本戦 play counts. These are the cards acquired by rarity and type, purchases at 相談 and インターバル, deletions, upgrades, customisations, and drinks.
+- O1: answered for 本戦 on 2026-10-29 (decision G24). 選抜 counts are still open; decision G27's stopgap stands in for them.
+- O7: reading メダルもじゃ, a P-idol item, in the first P-item slot (decision G24). The sibling's 48 × 48 icons cover only items that support cards grant, so Milestone 5 needs its own template for it.
 - O2: whether the samples may be committed as fixtures (they show the user's deck and idol, nothing else personal), or must be cropped or kept local.
 - O3: the subdomain.
 - O4: whether the game floors, rounds or ceils base × (1 + bonus). Settle it with one in-game lesson result before trusting margins of a point or two.
@@ -577,6 +613,8 @@ Revision note (2026-10-29): Milestone 1 implemented. Changes:
 Revision note (2026-10-29, later): Milestone 1 merged (#5). Milestone 2 is split in Progress into the sibling's half and this repository's half. Decision G21 records that the sibling's half runs in a session in that repository.
 
 Revision note (2026-10-29, after the sibling's report): the sibling's pull request #57 is open. Two discoveries record the file's actual shape: held cards in a separate `held` list with `reasons`, and what a held card's entry leaves out. Milestone 2's text now names every type to copy and the sibling's versioning rule (its ADR 0010).
+
+Revision note (2026-10-29, Milestone 3 started): Milestone 2 merged (#7). The user answered O1 for 本戦: decisions G24–G26 record the answers and the UI rule. Decision G27 records the 選抜 stopgap. Two discoveries correct the DMM item descriptions and record what the DMM memory holds. O7 is new.
 
 Revision note (2026-10-29, Milestone 2 built): the sibling's pull request #57 merged, and this repository's half is built. Changes:
 - Added decisions G22 (the whole real file as the fixture) and G23 (all-or-nothing loading, unknown fields dropped).
