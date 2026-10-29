@@ -24,8 +24,9 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [ ] Open item O3: choose the tia.run subdomain. Needed by Milestone 6.
 - [x] (2026-10-29 01:10Z) Milestone 1: toolchain, rating arithmetic, スター性 bound, schedule-only bound. Issue #4, branch `feature/m1-rating-schedule`: `bun test` 30 pass, type-check and lint clean, every guard seen red by mutation (`Artifacts and Notes`).
 - [x] (2026-10-29 02:07Z) Milestone 1 merged into `develop` by pull request #5 (merge commit 841b7be), closing #4.
-- [ ] Milestone 2 (issue #6, branch `feature/m2-card-data`), sibling half: gakumas-supportcards publishes `dist/data/cards.v1.json` through its own pull request, worked by a session in that repository (decision G21). Completed: (2026-10-29) the sibling's pull request #57 (`tia-tools/gakumas-supportcards`, branch `feature/cards-v1-json`) is open into its `develop`. Remaining: the user merges it. The file goes live only after the sibling's `develop` is released into `main`, which deploys.
-- [ ] Milestone 2, this repository's half: `src/data/contract.ts`, `src/data/load.ts` and a fixture from the sibling's real output. Waits on the sibling half.
+- [x] (2026-10-29 03:02Z) Milestone 2 (issue #6, branch `feature/m2-card-data`), sibling half: gakumas-supportcards publishes `dist/data/cards.v1.json`, worked by a session in that repository (decision G21). Its pull request #57 (`tia-tools/gakumas-supportcards`) merged into its `develop` as d08f3de. The file goes live only after the sibling's `develop` is released into `main`, which deploys. Milestone 4's Worker needs that; this milestone's tests do not.
+- [x] (2026-10-29 03:10Z) Milestone 2, this repository's half: `src/data/contract.ts`, `src/data/load.ts` and the fixture `src/data/fixtures/cards.v1.json`. `bun test` 45 pass, type-check and lint clean, every loader guard seen red by mutation (`Artifacts and Notes`).
+- [ ] Milestone 2 merged into `develop` by a pull request that closes #6.
 - [ ] Milestone 3: support abilities and P-items in 本戦; the full best-case bound.
 - [ ] Milestone 4: the form page and its Worker.
 - [ ] Milestone 5: reading the screenshots (prototype first).
@@ -63,6 +64,9 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 
 - Observation: A held card's entry in `cards` is incomplete in one of two ways, depending on why it is held. If the sibling cannot read an effect at all, that effect is left out of the card. If it can read the effect but one of its own route profiles has no number for it, the effect stays in the card. Milestone 3 must therefore not assume that every reason in `held` stands for a missing effect. An effect that stays may be countable here with the 本戦 profile. Only effects that are actually missing become 「未計上」 lines with a manual points field (decision G12).
   Evidence: the doc comment on `held` in the sibling's `data/card-data-file.ts` (pull request #57).
+
+- Observation: No trigger in the published data carries a `scenario` field today. No support card ability or card-granted P-item in it is limited to one scenario, so open item O6 has no case to handle yet. A card added later could still bring one.
+  Evidence: `jq '[.. | objects | select(has("occasion")) | keys[]] | unique'` over the fixture prints `["conditions","filters","occasion"]` (2026-10-29, sibling d08f3de).
 
 
 ## Decision Log
@@ -153,10 +157,20 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
   Rationale: A session here runs in a sandbox that can write only this repository. A write probe in the sibling's checkout was refused with "Operation not permitted". Working there from here would need every build, test and git command run outside the sandbox. A session in the sibling also loads that repository's own `CLAUDE.md` rules, which its change has to follow.
   Date/Author: 2026-10-29, user (chose this over working there unsandboxed, or writing this repository's half first against a guessed format).
 
+- Decision G22: The loader's test fixture `src/data/fixtures/cards.v1.json` is the sibling's whole published file (210 cards, 1.57 MB, 45 KB gzipped), not a trimmed subset. It was regenerated from the sibling's merged data, and its SHA-256 matched the sibling's own build output. Refresh it the same way (`Concrete Steps`) when the sibling bumps the format, or when a later milestone needs newer cards.
+  Rationale: Checking the whole file proves the loader accepts every real card and drops no field: the test requires the parsed data to equal the file exactly. Milestone 3's DMM breakdown can also take its six deck cards from the same fixture. A trimmed copy would need a trimming script and would prove less.
+  Date/Author: 2026-10-29, agent.
+
+- Decision G23: `parseCardData` is all or nothing. One value that does not match the contract refuses the whole file, and the error names its path (e.g. `cards[0].breakpoints[0].effects[0].stat: expected vocal | dance | visual`). An empty card list is refused too. A field the contract does not name is dropped, not refused.
+  Rationale: `Idempotence and Recovery` requires that the page never computes with a partial card list; a refused file sends it to the manual form instead. Unknown fields are dropped because the sibling's ADR 0010 makes every change to the shape bump the format version. A new field without a bump would break that rule, and refusing the file would take the card pickers down for something the computation does not read.
+  Date/Author: 2026-10-29, agent.
+
 
 ## Outcomes & Retrospective
 
 Milestone 1 (2026-10-29) delivered the arithmetic that needs no card data, in `src/engine/`. The DMM sample's figures in `Artifacts and Notes` now come from code, not only from hand arithmetic: best final スター性 1335, S5 needs 7044, schedule-only best total 6410. A memory at スター性 760 needs 7232. Two things are still provisional. Results below 親愛度 Lv37 use the interim reading of decision G16 until O5 is answered, and lesson gains are floored until O4 confirms the game floors. One lesson from this milestone: a floor over a floating-point product is wrong on ordinary inputs (120 at +2.5%), so every floored product in the remaining milestones must be computed in integers as well (decision G18).
+
+Milestone 2 (2026-10-29) made the sibling's card data readable here. gakumas-supportcards publishes `/data/cards.v1.json` (its pull request #57 and ADR 0010). `src/data/load.ts` reads the file whole against the copied contract and refuses anything that does not match, naming where. Its fixture is the real file, and the DMM sample's six deck cards are in it. Two things remain outside this milestone. The file is not live until the sibling releases its `develop` into `main`, which Milestone 4's Worker needs. And held cards are only parsed here: what their reasons mean for the bound is Milestone 3's job, guided by the discovery in `Surprises & Discoveries` on what a held card's entry leaves out. One lesson: a plan's guess at another repository's format (a per-card `uncounted` field) was wrong in its field name and its placement. The contract was copied from the merged code, not from the plan.
 
 
 ## Context and Orientation
@@ -286,7 +300,7 @@ Milestone 2 makes the sibling's card data available here.
 - In this repository:
   - `src/data/contract.ts` copies the sibling's `Card`, `ClassifiedEffect`, `ParsedTrigger`, `ItemGrant`, `LevelLimits` and `HeldCard` types (the contract of ADR 0001) from its `src/engine/types.ts`. It also copies the types those carry: `Breakpoint`, `FilterRef`, `ConditionRef`, `FilterFamily` with `FILTER_FAMILIES`, `CardType`, `Rarity`, `Plan` and `EffectKind`. The sibling's `Stat` is the same union as `src/engine/types.ts`'s, so the contract reuses that one.
   - `src/data/load.ts` parses the file `{ formatVersion, levelLimits, cards, held }` with type guards and rejects any `formatVersion` other than 1. No `as T` casts: the lint rules forbid them.
-  - A test feeds it a fixture written from the sibling's real output.
+  - A test feeds it a fixture written from the sibling's real output, `src/data/fixtures/cards.v1.json` (decision G22).
 - The Worker route `/data/cards.json` (decision G14) is added in Milestone 4, where the Worker is created; until then the dev server serves a local copy.
 
 Milestone 3 counts what the deck's support abilities and P-items add in 本戦 and combines it with Milestone 1.
@@ -377,7 +391,23 @@ The tests to write first, each shown failing before its code exists:
 - `bestFinalStar({ star: 760, affection: 37, wappenLeft: 4 }) === 1285`, and with that, `requiredTotal(35000, 1285) === 7232`
 - the DMM sample's schedule-only best total of 6410 (see `Artifacts and Notes`)
 
-Milestone 2, in the sibling (`~/Developer/gakumas-supportcards`): `bun run build`, then `jq '.formatVersion, (.cards | length)' dist/data/cards.v1.json` prints `1` and the card count. Back here, `bun test src/data` passes.
+Milestone 2, in the sibling (`~/Developer/gakumas-supportcards`): `bun run build`, then `jq '.formatVersion, (.cards | length)' dist/data/cards.v1.json` prints `1` and the card count (210 on 2026-10-29). Back here, `bun test src/data` passes.
+
+To refresh the fixture from a session here, whose sandbox cannot write the sibling, generate the file with the sibling's own function. Write this script to `$TMPDIR/gen-cards.ts`, with `S` set to the sibling's checkout path, on its merged `develop`:
+
+    import { cardDataJson } from "<S>/data/card-data-file.ts";
+    import { CARDS } from "<S>/data/cards.generated.ts";
+    import { HELD } from "<S>/data/held.generated.ts";
+    import { LEVEL_LIMITS } from "<S>/data/levelLimits.generated.ts";
+    await Bun.write(process.argv[2] ?? "", cardDataJson(CARDS, HELD, LEVEL_LIMITS));
+
+Then run it, and compare the result with the sibling's own build output where one exists:
+
+    cd "$TMPDIR" && bun gen-cards.ts "$TMPDIR/cards.v1.json"
+    shasum -a 256 "$TMPDIR/cards.v1.json" <S>/dist/data/cards.v1.json   # same hash
+    cp "$TMPDIR/cards.v1.json" src/data/fixtures/cards.v1.json            # from this repository's root
+
+On 2026-10-29 both hashes were `b989a77e…0d8881`, and `bun test src/data` printed `15 pass, 0 fail`.
 
 Milestone 3: `bun test src/engine` additionally prints the DMM sample breakdown in a test's snapshot; the user confirms it.
 
@@ -443,6 +473,21 @@ Milestone 1's tests were each seen to fail before the code existed, as missing m
     floor(スター性 × 7.5) dropped               RED   2 rating tests
     requiredTotal round instead of ceil      green: an equivalent change. The value halved is an integer, so the result is whole or ends in .5, where Math.round and Math.ceil agree
 
+Milestone 2's loader was written before its tests ran, so the tests were first run with `src/data/load.ts` moved aside ("Cannot find module './load.ts'"), and then with each guard broken in turn. Results, 2026-10-29:
+
+    optional field (drinks) dropped           RED   the parsed data equals the file
+    format-version check removed              RED   2 tests (another version, no version)
+    empty card list allowed                   RED   refuses an empty card list
+    stat read as any string                   RED   names the path of a bad value
+    integer accepts NaN                       RED   refuses a fractional or non-finite number
+    level row length unchecked                RED   refuses a level-limit row that is not five levels
+    optional fields written as undefined      RED   the parsed data equals the file
+    filter family read as any string          RED   refuses a filter family the contract does not know
+    held list ignored                         RED   reads a held card with its reasons
+    card keeps unknown fields                 RED   drops a field the contract does not name
+    rarity not required                       RED   refuses a missing required field
+    object check disabled                     RED   names a value that should be an object (added after this mutant first survived)
+
 
 ## Interfaces and Dependencies
 
@@ -474,6 +519,19 @@ Milestone 1 built these, in `src/engine/`:
     export function applySchedule(memory: Memory, placement: Placement, cap: number): Record<Stat, number>;
     export function bestScheduleGain(memory: Memory, cap: number): ScheduleResult;
 
+Milestone 2 built these, in `src/data/`:
+
+    // contract.ts: copied from gakumas-supportcards' src/engine/types.ts at d08f3de
+    export type CardType, Rarity, Plan, EffectKind;
+    export const FILTER_FAMILIES; export type FilterFamily;
+    export interface FilterRef, ConditionRef, ParsedTrigger, ClassifiedEffect, HeldCard, Breakpoint, ItemGrant, Card;
+    export type LevelLimits = Record<Rarity, readonly [number, number, number, number, number]>;
+    export const CARD_DATA_FORMAT_VERSION = 1;
+    export interface CardDataFile { formatVersion: 1; levelLimits: LevelLimits; cards: readonly Card[]; held: readonly HeldCard[] }
+    // load.ts
+    export class CardDataError extends Error {}           // the message names the path of the first bad value
+    export function parseCardData(json: unknown): CardDataFile;   // all or nothing (decision G23)
+
 At the end of Milestone 3 these must exist:
 
     // src/engine/types.ts
@@ -503,7 +561,7 @@ Open items, carried until answered:
 - O3: the subdomain.
 - O4: whether the game floors, rounds or ceils base × (1 + bonus). Settle it with one in-game lesson result before trusting margins of a point or two.
 - O5: the 親愛度 level in force at each 本戦 スター性 gain below Lv37. Until it is answered, decision G16's upper-bound reading applies.
-- O6: whether any trigger names a scenario token that separates 選抜 (produce-007) from 本戦 (produce-008). The sibling's `count.ts` treats a trigger of another scenario as 0.
+- O6: whether any trigger names a scenario token that separates 選抜 (produce-007) from 本戦 (produce-008). The sibling's `count.ts` treats a trigger of another scenario as 0. As of 2026-10-29, no trigger in the published data carries `scenario` (`Surprises & Discoveries`).
 
 
 Revision note (2026-10-28): first draft, written at the end of the design interview from its scratch log; decisions G1–G13 are the user's or follow from them as marked, G14–G15 are the agent's and open to revision.
@@ -517,3 +575,8 @@ Revision note (2026-10-29): Milestone 1 implemented. Changes:
 Revision note (2026-10-29, later): Milestone 1 merged (#5). Milestone 2 is split in Progress into the sibling's half and this repository's half. Decision G21 records that the sibling's half runs in a session in that repository.
 
 Revision note (2026-10-29, after the sibling's report): the sibling's pull request #57 is open. Two discoveries record the file's actual shape: held cards in a separate `held` list with `reasons`, and what a held card's entry leaves out. Milestone 2's text now names every type to copy and the sibling's versioning rule (its ADR 0010).
+
+Revision note (2026-10-29, Milestone 2 built): the sibling's pull request #57 merged, and this repository's half is built. Changes:
+- Added decisions G22 (the whole real file as the fixture) and G23 (all-or-nothing loading, unknown fields dropped).
+- Added a discovery partly answering O6: no trigger carries `scenario` today.
+- Added the fixture-refresh steps, the Milestone 2 outcome, the loader's mutation record and the `src/data/` exports.
