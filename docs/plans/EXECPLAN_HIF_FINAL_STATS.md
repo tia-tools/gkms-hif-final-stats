@@ -33,7 +33,9 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-29 06:31Z) Milestone 4 (issue #10, branch `feature/m4-page`), code: the page in `src/app/`, the Worker in `infra/worker/`, and the toolchain (G29). `bun test` 152 pass after the Codex review's fixes, type-check, lint and `bun run build` clean.
 - [x] (2026-10-29 06:31Z) Milestone 4, acceptance: the DMM sample entered by hand at `http://localhost:5173` (stats and bonuses typed, the six cards picked by name, the three P-items tapped and their digits typed) shows 6971 and S5 short by 73, as Milestone 3 computed. Two bugs found on the way are fixed, with tests.
 - [x] (2026-10-29 09:08Z) Milestone 4 merged into `develop` by pull request #11 (merge commit c2cd3b2), closing #10. The Worker's `wrangler.toml` and deployment wait for Milestone 6.
-- [ ] Milestone 5 (issue #12, branch `feature/m5-reader`): reading the screenshots (prototype first).
+- [x] (2026-10-29 10:04Z) Milestone 5 (issue #12, branch `feature/m5-reader`), the numbers. `src/reader/` reads both tabs of all six samples right: stats, bonuses, スター性, 親愛度 (or hidden), each P-item's fires left (a badge, none, or spent), each tile's Lv and lit × marks, and 相談リフレッシュ. Every value carries a confidence; the lowest on the samples is 0.58. `bun test` 192 pass, type-check and lint clean, every guard seen red (`Artifacts and Notes`).
+- [ ] Milestone 5, the pictures: support tiles matched against the sibling's thumbnails, the サポート P-items against the deck's item icons, and the カスタム item's character and accessory (G33).
+- [ ] Milestone 5, the page: dropping the two screenshots fills the form, unsure values highlighted, a tile's top three candidates offered.
 - [ ] Milestone 6: deploy and CI gates.
 
 
@@ -45,7 +47,7 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - Observation: The in-game support-card tile on the 編成 tab is not the whole card art. It is a crop of it, zoomed by a different amount per card.
   Evidence: Each DMM tile was compared with all 206 local 192 × 108 thumbnails of gakumas-supportcards (`scripts/images/out/w192/`) on a 32 × 18 colour grid. The plain comparison ranked 4 of 6 tiles correctly. A search over zoom 1.0–1.6 and nine offsets ranked all 6 first, but two margins are thin: csprt-3-0062 scored 1243 against 1632 for the runner-up, at the edge of the zoom range, and csprt-2-0007 scored 315 against 660.
 
-- Observation: The marks after "Lv" on a support-card tile count 凸 (limit breaks). There is no filled versus empty distinction.
+- Observation: The marks after "Lv" on a support-card tile count 凸 (limit breaks). This line first said there is no filled versus empty distinction; there is. Every tile has four mark positions, and a mark not yet earned is drawn dark over the art, which the first samples hid. The reader counts the lit ones (decision G35).
   Evidence: In samples 02 and 03, Lv55 tiles show three ×, an SSR at Lv50 shows two ×, and Lv60 tiles and an SR at Lv50 show four ×.
 
 - Observation: On a tall phone the layout is the DMM layout scaled to the image width and shifted down. A blurred band of the idol image fills the extra top space.
@@ -99,6 +101,15 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 
 - Observation: The カスタム P-item is not one item but one of 180 combinations: a plan, a character, a pouch colour and an accessory, each its own image layer (decision G33). Its effect follows the combination, so its icon has to be read part by part. The 黄 メダルもじゃ also grants 2 P-drinks at the 相談, which the bound does not count yet: the メダルもじゃ flag sets only the deletions.
   Evidence: `ProduceCustomizeItem.yaml` in `vertesan/gakumasu-diff`, read 2026-10-29. Its 180 entries carry `assetId1` to `assetId5`. The 黄 メダルもじゃ's text reads, in part, 相談選択時、ランダムな特定のPドリンクを2つ獲得.
+
+- Observation: The DMM window does not lay out quite like the phones. Its content sits 7 units to the left, likely the width of its scroll bar, so no position can be taken from the screenshot's edge. On the phones the layout scales exactly with width: the 「カスタム」 label measured 84.3 to 85.0 units wide on all six samples, and the 「SP」 badges 38.2 to 39.0, 74.5 to 75.0 apart.
+  Evidence: the anchors measured on the twelve fixtures, 2026-10-29: the label's left edge at 20.0 units on DMM against 26.8 to 27.8 on the phones; the 「SP」 badge's at 51.0 against 58.0 to 58.6.
+
+- Observation: The iPhone SE 3 基本情報 sample is scrolled. The panel has slid under the idol image, which hides 親愛度 and the stat labels but not the stat digits. The panel's visible top there is 128.6 units above the 「カスタム」 label, against 308 unscrolled.
+  Evidence: `src/reader/fixtures/iphone-se3-01-kihon.png`; `locate` in `src/reader/layout.ts`.
+
+- Observation: The P-item icons are 90.7 units apart, not 90. The digit badges first suggested 89.7, because their grey merges with icon art. Measured on the icons' frames, the pitch is the same on all six samples.
+  Evidence: the frames' left edges at −1.1, 89.3, 180.8, 271.3, 361.7, 452.7 and 543.1 units on the iPhone 15 Pro Max samples, and 0, 90, 181, 272, 362, 453 and 544 on DMM.
 
 
 ## Decision Log
@@ -272,6 +283,18 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
 
 - Decision G34: The page will live at `gmks-hif-final-stats.tia.run` (open item O3). That is the repository's name, the way the sibling lives at `gakumas-supportcards.tia.run`.
   Date/Author: 2026-10-29, user.
+
+- Decision G35: How the reader reads numbers (`src/reader/`, pure functions over a `Raster`, the shape of the browser's `ImageData`).
+  - **Units and anchors:** both tabs are laid out on a 720-wide grid scaled to the screenshot's width, so a unit is `width / 720` pixels. Every position is measured from an anchor found in the image: the green 「カスタム」 label (84.5 units wide) on 基本情報, and the pink 「SP」 badge (38.5 units square, with the blue and yellow ones 75 and 150 below) on 編成. This replaces G7's "fallback to the 「Pアイテム」 heading": both anchors were found on all twelve screenshots.
+  - **Hidden fields:** on 基本情報 the idol image stays put while the panel scrolls under it. The panel's first visible row is where its plain left margin ends, walking up from the label, but never above where the panel starts unscrolled (308 units). A field above it reads as hidden (null), never as a guess.
+  - **Ink:** a pixel is ink only if it is neutral (R, G and B within 60 of each other) and on the text's side of the box's Otsu threshold. When over 45% of the box comes out as ink, the cut fell between two grounds (the page and a bonus's grey pill), and a second cut within that side finds the text.
+  - **Glyphs:** runs of inked columns, each scaled into a 12 × 16 grid with its proportions kept, and compared with templates by mean squared difference. The confidence is how much nearer the best template is than the runner-up, as a share of the runner-up's distance; below 0.35 the form will highlight the value. A short glyph on the baseline at least an eighth of the line in size is a decimal point; smaller marks are dropped.
+  - **Fonts:** five template sets (`fonts.ts`): bold (スター性, stats, 親愛度), bonus (with 「%」), badge (an item's fires left), lv and count (the 残り lines). Each is the mean shape of every glyph the samples show in it, cut by `scripts/glyph-templates.ts` and stored in `glyph-templates.ts`. A font borrows from bold the digits its samples lack: the bold templates alone read all 72 sample Lv glyphs right.
+  - **Item badges:** an item's fires left sit on a filled grey badge; an item with no fire limit has none, and a spent (発動済み) item is greyed whole. The badge shares its grey with the icons' thin outlines, so a pixel counts only if every pixel within 1.5 units is that grey too. A spent item is left out of the form, which counts the same as 0 fires left.
+  - **Tiles:** the level is the white fill of the Lv digits, the connected parts at least half the box tall, so light art behind them stays out. A × mark is lit when half of its middle is pale: lit marks measure at least 0.97 and unlit ones 0.00 on the samples.
+  - **相談リフレッシュ:** the third of three text lines 30 units apart under the effects, or under 除去済みスキルカード when the run deleted cards, so it is found wherever that section pushes it.
+  Rationale: Each rule was measured on all six samples before it was written down, and the numbers are in `Surprises & Discoveries`. Templates from the other memories read every sample glyph (`src/reader/templates.test.ts`), the evidence that they carry over to a memory they were not cut from.
+  Date/Author: 2026-10-29, agent.
 
 
 ## Outcomes & Retrospective
@@ -628,6 +651,21 @@ Milestone 3's guards, each broken in turn under `bun test src/engine` (2026-10-2
 - In `bestTotal`: panel occasions, item drinks, ワッペン limited by acquisitions, the 「暫定」 mark, the tie order, manual points and the day-3 override.
 
 After the Codex review moved the 「未計上」 entries from one per card to one per reason, two shortcuts were put back one at a time, and both went red: 「暫定」 judged by a card's first reason only, and only a card's first entry counted. The second review found two more cases, and both fixes went red when undone: a held card with an empty reason list counted as settled, and a ワッペン without a digit counted 0 fires.
+
+Milestone 5's number reading, each guard broken in turn under `bun test src/reader` (2026-10-29). These went red:
+- the second Otsu cut, the neutral-only ink, the decimal point's minimum size and the confidence;
+- the badge's minimum and spent areas, the 1.5-unit erosion, the 90.7 item pitch and the frame test for an icon;
+- the 親愛度 bounds, a mark lit at no pale share and at an impossible one, the 30-unit line step and the Lv parts' minimum height;
+- the label's width, the blue and yellow badges under 「SP」, the floor on the panel's top and the margin walk;
+- the fallback keeping a font's own templates, and the fallback itself.
+
+Four survived at first, and each was settled:
+- The 親愛度 bounds survived because no sample has a value out of range; `bounded` gained its own test.
+- A lit-mark share of 0.05 survived because lit marks measure at least 0.97 and unlit ones 0.00. The test was rerun with shares of 0 and 1.01, and both went red.
+- The label-width check survived because the test's green bar was too short to be found at all. It is now long enough to be found and the wrong width.
+- Letting the count font borrow from bold changed no sample reading. Borrowing was then adopted, since it lets a count of 5 or more be read at all, and a test pins that the Lv and count templates read the bold digits they lack.
+
+Two more checks covered what no single glyph does. The blue and yellow badges gained a test with a lone pink square, and the fallback gained one for digits a font's own samples lack.
 
 
 ## Interfaces and Dependencies
