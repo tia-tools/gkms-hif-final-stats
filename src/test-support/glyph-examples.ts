@@ -1,0 +1,121 @@
+/**
+ * Every glyph the reader cuts from the sample screenshots, paired with the character the sample
+ * shows there (`samples.ts`), by font. The template script averages them; the tests measure how
+ * well templates from some samples read the others.
+ */
+
+import { STATS } from "../engine/types.ts";
+import { classify, encodeTemplate, shapes } from "../reader/digits.ts";
+import type { Mask } from "../reader/glyphs.ts";
+import { TILES, countLines, lineMask, lvMask } from "../reader/hensei.ts";
+import { AFFECTION, BONUSES, PARAMS, STAR, badgeMask, fieldMask, slotState } from "../reader/kihon.ts";
+import { locate, shows } from "../reader/layout.ts";
+import type { Raster } from "../reader/raster.ts";
+import { FALLBACK, FONT_CLASSES, type FontClass, withFallback } from "../reader/fonts.ts";
+import { loadFixture } from "./png.ts";
+import { HENSEI, KIHON, SAMPLES, type Sample, permilText } from "./samples.ts";
+
+export interface Example {
+  sample: Sample;
+  char: string;
+  cells: Float32Array;
+}
+
+export type Examples = Record<FontClass, Example[]>;
+
+function add(out: Example[], sample: Sample, mask: Mask, text: string, where: string): void {
+  const cells = shapes(mask);
+  if (cells.length !== text.length) throw new Error(`${sample} ${where}: ${cells.length} glyphs for "${text}"`);
+  cells.forEach((c, i) => out.push({ sample, char: text[i] ?? "", cells: c }));
+}
+
+function kihon(out: Examples, sample: Sample, r: Raster): void {
+  const frame = locate(r);
+  if (frame?.tab !== "kihon") throw new Error(`${sample}: no 基本情報 anchor`);
+  const e = KIHON[sample];
+  add(out.bold, sample, fieldMask(r, frame, STAR), String(e.star), "スター性");
+  STATS.forEach((stat, i) => {
+    add(out.bold, sample, fieldMask(r, frame, PARAMS[stat]), String(e.params[i]), stat);
+    add(out.bonus, sample, fieldMask(r, frame, BONUSES[stat]), `${permilText(e.bonusPermil[i] ?? 0).replace(".", "")}%`, `${stat} bonus`);
+  });
+  if (e.affection !== null && shows(frame, AFFECTION, r)) add(out.bold, sample, fieldMask(r, frame, AFFECTION), String(e.affection), "親愛度");
+  e.slots.forEach((digit, k) => {
+    if (typeof digit === "number" && slotState(r, frame, k) === "badge") add(out.badge, sample, badgeMask(r, frame, k), String(digit), `slot ${k}`);
+  });
+}
+
+function hensei(out: Examples, sample: Sample, r: Raster): void {
+  const frame = locate(r);
+  if (frame?.tab !== "hensei") throw new Error(`${sample}: no 編成 anchor`);
+  const e = HENSEI[sample];
+  for (let k = 0; k < TILES; k++) add(out.lv, sample, lvMask(r, frame, k), String(e.levels[k]), `tile ${k} Lv`);
+  const lines = countLines(r, frame);
+  if (lines === null) throw new Error(`${sample}: no count lines`);
+  lines.forEach((box, i) => {
+    const last = shapes(lineMask(r, box)).at(-1);
+    if (last !== undefined) out.count.push({ sample, char: String(e.counts[i]), cells: last });
+  });
+}
+
+export async function collectExamples(): Promise<Examples> {
+  const out: Examples = { bold: [], bonus: [], badge: [], lv: [], count: [] };
+  for (const sample of SAMPLES) {
+    kihon(out, sample, await loadFixture(`${sample}-kihon`));
+    hensei(out, sample, await loadFixture(`${sample}-hensei`));
+  }
+  return out;
+}
+
+/** The mean shape of each character among the examples. */
+export function average(examples: readonly Example[]): Map<string, Float32Array> {
+  const sums = new Map<string, { cells: Float32Array; n: number }>();
+  for (const { char, cells } of examples) {
+    const entry = sums.get(char) ?? { cells: new Float32Array(cells.length), n: 0 };
+    cells.forEach((v, i) => (entry.cells[i] = (entry.cells[i] ?? 0) + v));
+    entry.n++;
+    sums.set(char, entry);
+  }
+  return new Map([...sums].map(([char, { cells, n }]) => [char, cells.map((v) => v / n)]));
+}
+
+/** DMM 01 and iPhone 15 Pro Max 01 are one memory, so they are left out together. */
+const memory = (sample: Sample): Sample => (sample === "iphone-15promax-01" ? "dmm-01" : sample);
+
+export interface HeldOut {
+  right: number;
+  total: number;
+  misses: string[];
+}
+
+/**
+ * Reads each glyph of the font with templates cut from the other memories only, merged with the
+ * fallback font as the reader merges them. Characters no other memory shows are skipped.
+ */
+export function leaveOneOut(all: Examples, font: FontClass): HeldOut {
+  let right = 0;
+  const misses: string[] = [];
+  const fallback = FALLBACK[font];
+  for (const e of all[font]) {
+    const others = (f: FontClass) => average(all[f].filter((o) => memory(o.sample) !== memory(e.sample)));
+    const templates = withFallback(others(font), fallback === undefined ? undefined : others(fallback));
+    if (!templates.has(e.char)) continue;
+    const { char } = classify(e.cells, templates);
+    if (char === e.char) right++;
+    else misses.push(`${e.sample} ${e.char}→${char}`);
+  }
+  return { right, total: right + misses.length, misses };
+}
+
+/** The text of `src/reader/glyph-templates.ts` for these examples. */
+export function templatesFile(all: Examples): string {
+  let text = "// Generated by scripts/glyph-templates.ts from the samples in src/reader/fixtures/; do not edit.\n";
+  text += "// One hex digit per glyph-grid cell, row by row: the share of ink in sixteenths.\n\n";
+  text += "export const STORED_TEMPLATES = {\n";
+  for (const font of FONT_CLASSES) {
+    const means = average(all[font]);
+    text += `  ${font}: {\n`;
+    for (const char of [...means.keys()].sort()) text += `    ${JSON.stringify(char)}: "${encodeTemplate(means.get(char) ?? new Float32Array())}",\n`;
+    text += "  },\n";
+  }
+  return `${text}} as const;\n`;
+}
