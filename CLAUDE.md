@@ -34,7 +34,13 @@ A static web page for 学園アイドルマスター players of the H.I.F. scena
 - `rating.ts`: the rank table, the 評価値 formula, and the total each rank needs for a given final スター性;
 - `star.ts`: the best final スター性 a memory can reach in 本戦;
 - `schedule.ts`: the 324 placements of the 本戦 lessons and 授業, and the best total from the schedule alone;
-- `types.ts`: the shared `Stat` and `Memory` types.
+- `count.ts`: how often a trigger fires under a set of counts, ported from gakumas-supportcards' counting rule;
+- `honsen-profile.ts`: 本戦's counts from the schedule and the user's typical play, and a stopgap for 選抜's (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decisions G24 and G27);
+- `abilities.ts`: what the deck's support cards and held P-items can still fire in 本戦, with the fires each has left;
+- `total.ts`: `bestTotal`, the best-case bound: every placement scored with the abilities, capped per stat, and every rank's margin;
+- `types.ts`: the shared `Stat`, `Memory`, `DeckSlot`, `HeldItem` and `RankLine` types.
+
+Every count the bound uses is a default the player can change in the panel (decision G25). `src/test-support/dmm.ts` is the DMM sample as engine input; its worked breakdown is in the plan's § Artifacts and Notes.
 
 Every floored product is computed in integers, because floating point floors 120 at +2.5% to 122 instead of 123 (per `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decision G18).
 
