@@ -210,7 +210,7 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
   - ワッペン fires as often as skill cards are acquired, up to its remaining fires. Lowering the acquisitions in the panel therefore lowers スター性 and raises every rank's required total.
   - A trigger restricted to a scenario fires only if that scenario is H.I.F. (the sibling's id `hif`). No trigger in today's data is restricted (O6).
   - A day-3 おでかけ is counted like 差し入れ, with the same 1 card and 1 P-drink; only the 差し入れ and おでかけ triggers differ. On a tie, 差し入れ wins, as the user usually chooses it.
-  - A held deck card's uncounted abilities (G12) take the player's points on one stat they choose. Any value, 0 included, ends the 「暫定」 mark.
+  - Each reason a held deck card gives (G12) is one 「未計上」 entry, with the player's points on the stat they choose. 「暫定」 stays until every reason has a value, 0 included. The reasons cannot tell an effect left out of the card from one kept in it and counted here (`Surprises & Discoveries`). So every reason is listed, and the player enters 0 for one whose effect is already counted. A first version took one entry per card, on one stat. The Codex review of 2026-10-29 found that a card with uncounted abilities on two stats would then lose points to one stat's cap, putting the bound too low.
   - An unknown card id refuses the computation rather than dropping the card, because dropping it would lower the bound silently.
   Date/Author: 2026-10-29, agent.
 
@@ -561,6 +561,8 @@ Milestone 3's guards, each broken in turn under `bun test src/engine` (2026-10-2
 - In the abilities: the パラメータボーナス+ exclusion, which first survived because every bonus effect in today's data is on プロデュース開始, and so gained its own test; unheld items, 選抜 use and ワッペン's need.
 - In `bestTotal`: panel occasions, item drinks, ワッペン limited by acquisitions, the 「暫定」 mark, the tie order, manual points and the day-3 override.
 
+After the Codex review moved the 「未計上」 entries from one per card to one per reason, two shortcuts were put back one at a time, and both went red: 「暫定」 judged by a card's first reason only, and only a card's first entry counted.
+
 
 ## Interfaces and Dependencies
 
@@ -613,7 +615,7 @@ Milestone 3 built these, in `src/engine/` (the Milestone 1 exports above stand, 
       medalMoja: boolean }                 // the first P-item is メダルもじゃ (G24)
     export interface DeckSlot { cardId: string; level: number }
     export const WAPPEN = "wappen";
-    export interface HeldItem { itemId: string; remaining?: number }   // remaining absent: no fire limit
+    export interface HeldItem { itemId: string; remaining?: number }   // remaining absent: the item's cap if it has one, else no limit
     export interface RankLine { rank: string; rating: number; required: number; margin: number; provisional: boolean }
     // schedule.ts (added)
     export function scheduleGains(memory: Memory, placement: Placement): Record<Stat, number>;   // before the cap
@@ -638,7 +640,8 @@ Milestone 3 built these, in `src/engine/` (the Milestone 1 exports above stand, 
     export function abilityLines(abilities: readonly Ability[], counts: Counts): AbilityLine[];
     export function itemDrinks(drinks: readonly DrinkSource[], counts: Counts): number;
     // total.ts
-    export interface PanelState { occasions?; filters?; conditions?; left?; day3?: Day3; uncounted?: Record<string, { stat: Stat; points: number }> }
+    export interface PanelState { occasions?; filters?; conditions?; left?; day3?: Day3; uncounted?: Record<string, { stat: Stat; points: number }> }   // uncounted keyed by uncountedKey
+    export function uncountedKey(cardId: string, reason: number): string;   // "<cardId>#<reason index>"
     export interface BestResult { placement; day3; counts; lines: AbilityLine[]; params; total; finalStar; ranks: RankLine[]; held: HeldCard[] }
     export function bestTotal(memory: Memory, deck: readonly DeckSlot[], items: readonly HeldItem[], data: CardDataFile, panel: PanelState, cap: number): BestResult;
 
@@ -678,3 +681,5 @@ Revision note (2026-10-29, Milestone 3 built): Milestone 3's code is in place. C
 - Added the DMM breakdown worked by hand, the mutation record and the Milestone 3 outcome.
 - Recorded the modules' exports, and corrected Milestone 3's line shape and `bestTotal` signature to what was built.
 - Its acceptance, the user's line-by-line check, is still open.
+
+Revision note (2026-10-29, Codex review of Milestone 3): G28's 「未計上」 bullet now gives one entry per reason, each on its own stat, after the review found the per-card entry could put the bound too low. The `HeldItem` and `PanelState` lines in Interfaces now match the code.
