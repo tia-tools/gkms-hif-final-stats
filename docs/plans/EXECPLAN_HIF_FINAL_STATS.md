@@ -27,7 +27,9 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [x] (2026-10-29 03:10Z) Milestone 2, this repository's half: `src/data/contract.ts`, `src/data/load.ts` and the fixture `src/data/fixtures/cards.v1.json`. `bun test` 46 pass, type-check and lint clean, every loader guard seen red by mutation (`Artifacts and Notes`).
 - [x] (2026-10-29 03:40Z) Milestone 2 merged into `develop` by pull request #7 (merge commit b1363b2), closing #6.
 - [x] (2026-10-29 04:00Z) Open item O1 answered for 本戦 by the user (decisions G24–G26). 選抜 counts stay a stopgap (decision G27).
-- [ ] Milestone 3 (issue #8, branch `feature/m3-honsen-abilities`): support abilities and P-items in 本戦; the full best-case bound.
+- [x] (2026-10-29 05:10Z) Milestone 3 (issue #8, branch `feature/m3-honsen-abilities`), code: `src/engine/count.ts`, `honsen-profile.ts`, `abilities.ts` and `total.ts`. `bun test` 92 pass, type-check and lint clean, every guard seen red by mutation. The DMM sample comes to 6971, short of S5 by 73 (`Artifacts and Notes`).
+- [ ] Milestone 3, acceptance: the user checks the DMM breakdown line by line.
+- [ ] Milestone 3 merged into `develop` by a pull request that closes #8.
 - [ ] Milestone 4: the form page and its Worker.
 - [ ] Milestone 5: reading the screenshots (prototype first).
 - [ ] Milestone 6: deploy and CI gates.
@@ -73,6 +75,9 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 
 - Observation: The DMM memory holds ワッペン (4 left), 完全制覇でポン (1 left) and 素敵なお仕事 (1 left), but not ふわふわでもこもこ. Its other P-items give no parameters: a カスタム item, the P-idol's own item (sunglasses), and two サポート items the card data does not list as counted (an H.I.F file and a lamp). The 編成 tab ends with three counts: スキルカード再抽選可能回数 残り2, スキルカード除去可能回数 残り0 and 相談リフレッシュ回数 残り1.
   Evidence: the two DMM screenshots in `temp/dmm/01/`. The サポート icons were matched by eye against the sibling's 48 × 48 icons `img_general_pitem_3-263` (coloured balls) and `img_general_pitem_3-352` (a clipboard). `img_general_pitem_2-004` (flowers in a glass) is not in the row. The user confirmed 完全制覇でポン's 1.
+
+- Observation: The DMM memory is much closer to S5 than this plan first estimated: 73 short, not about 260. Its abilities add 569 rather than about 370. The P-drink count is what was underestimated: 12 drinks fire two +5 abilities for 120. Two other things add up: 4 SSR acquisitions on two +6 abilities, and 8 drink purchases on one +11. At its best placement, Da reaches 3208, so the cap takes 8.
+  Evidence: `src/engine/total.test.ts`, which pins the total, the per-stat values and every ability line, each worked by hand in `Artifacts and Notes` before the code ran.
 
 
 ## Decision Log
@@ -200,12 +205,23 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
   Rationale: The plan allowed this stopgap until 選抜 counts are given, and only capped abilities use it. Every result is shown and adjustable (G25).
   Date/Author: 2026-10-29, agent.
 
+- Decision G28: Smaller choices made while building Milestone 3, each visible and adjustable in the panel where it sets a count:
+  - A held P-item's fires left are the digit on its icon. If a capped item has no digit read, its cap is used. An item's effects and its P-drinks share one fires-left value, and one panel entry.
+  - ワッペン fires as often as skill cards are acquired, up to its remaining fires. Lowering the acquisitions in the panel therefore lowers スター性 and raises every rank's required total.
+  - A trigger restricted to a scenario fires only if that scenario is H.I.F. (the sibling's id `hif`). No trigger in today's data is restricted (O6).
+  - A day-3 おでかけ is counted like 差し入れ, with the same 1 card and 1 P-drink; only the 差し入れ and おでかけ triggers differ. On a tie, 差し入れ wins, as the user usually chooses it.
+  - A held deck card's uncounted abilities (G12) take the player's points on one stat they choose. Any value, 0 included, ends the 「暫定」 mark.
+  - An unknown card id refuses the computation rather than dropping the card, because dropping it would lower the bound silently.
+  Date/Author: 2026-10-29, agent.
+
 
 ## Outcomes & Retrospective
 
 Milestone 1 (2026-10-29) delivered the arithmetic that needs no card data, in `src/engine/`. The DMM sample's figures in `Artifacts and Notes` now come from code, not only from hand arithmetic: best final スター性 1335, S5 needs 7044, schedule-only best total 6410. A memory at スター性 760 needs 7232. Two things are still provisional. Results below 親愛度 Lv37 use the interim reading of decision G16 until O5 is answered, and lesson gains are floored until O4 confirms the game floors. One lesson from this milestone: a floor over a floating-point product is wrong on ordinary inputs (120 at +2.5%), so every floored product in the remaining milestones must be computed in integers as well (decision G18).
 
 Milestone 2 (2026-10-29) made the sibling's card data readable here. gakumas-supportcards publishes `/data/cards.v1.json` (its pull request #57 and ADR 0010). `src/data/load.ts` reads the file whole against the copied contract and refuses anything that does not match, naming where. Its fixture is the real file, and the DMM sample's six deck cards are in it. Two things remain outside this milestone. The file is not live until the sibling releases its `develop` into `main`, which Milestone 4's Worker needs. And held cards are only parsed here: what their reasons mean for the bound is Milestone 3's job, guided by the discovery in `Surprises & Discoveries` on what a held card's entry leaves out. One lesson: a plan's guess at another repository's format (a per-card `uncounted` field) was wrong in its field name and its placement. The contract was copied from the merged code, not from the plan.
+
+Milestone 3 (2026-10-29) completed the bound. `bestTotal` scores each of the 324 placements, on both day-3 choices, with the deck's abilities and P-items under 本戦's counts. Those counts are decision G24's play counts and G27's stopgap for 選抜; the panel can change every one (G25). The result is the best placement, its ability lines, the capped stats and every rank's margin. The DMM memory comes to 6971: S5 is out of reach by 73, and S4+ is clear by 2427. The user still has to check the breakdown line by line, which is this milestone's acceptance. One lesson: two of the hand-worked test expectations were wrong at first, both by forgetting that lowering a capped stat frees what the cap held. The tests caught the arithmetic, and the expectations were corrected by hand, not copied from the code's output.
 
 
 ## Context and Orientation
@@ -356,8 +372,8 @@ Milestone 3 counts what the deck's support abilities and P-items add in 本戦 a
   - It is applied to remaining fires, not to fresh caps: G3 for skills, the screenshot's digit for items.
   - It drops what G15 excludes.
   - It adds drink-granting items' remaining fires to `GetProduceDrink` (G13).
-  - It returns per-ability lines `{ cardId, label, stat, perFire, fires, points, uncounted? }`.
-- `bestTotal(memory, deck, items, panel, cap)` runs the Milestone 1 placement search, now scoring each placement with the abilities included, because lesson-stat filters make abilities depend on placement. It returns the best placement, its lines, the per-stat totals after the cap, and, per rank, `requiredTotal` and the margin.
+  - It returns per-ability lines `{ key, cardId, effect, fires, points }`. The page derives the label from `effect` (its trigger and, for an item, its name), so the engine holds no display text.
+- `bestTotal(memory, deck, items, data, panel, cap)` runs the Milestone 1 placement search, now scoring each placement with the abilities included, because lesson-stat filters make abilities depend on placement. It returns the best placement, its lines, the per-stat totals after the cap, and, per rank, `requiredTotal` and the margin.
 - The milestone ends with the DMM sample deck's breakdown, which the user checks line by line as they did for the sibling's golden cards.
 
 Milestone 4 builds the page.
@@ -444,7 +460,7 @@ Then run it, and compare the result with the sibling's own build output where on
 
 On 2026-10-29 both hashes were `b989a77e…0d8881`, and `bun test src/data` printed `16 pass, 0 fail`.
 
-Milestone 3: `bun test src/engine` additionally prints the DMM sample breakdown in a test's snapshot; the user confirms it.
+Milestone 3: `bun test src/engine` passes, and `src/engine/total.test.ts` pins the DMM breakdown in `Artifacts and Notes` line by line; the user confirms that breakdown. On 2026-10-29 `bun test` printed `92 pass, 0 fail`.
 
 Milestone 4: `bun run dev`, open `http://localhost:5173`, and enter the DMM sample by hand. The S5 line shows "not reachable" with the shortfall, matching Milestone 3's number.
 
@@ -525,6 +541,26 @@ Milestone 2's loader was written before its tests ran, so the tests were first r
     integer accepts fractions                 RED   refuses a fractional or non-finite number (1.5 added after the Codex review)
     scenario dropped from triggers            RED   keeps a trigger's scenario (added after the Codex review: no real card has one)
 
+The DMM sample's full bound, worked by hand from the card data and decisions G24 and G27 before `bestTotal` ran, and pinned by `src/engine/total.test.ts`:
+
+    本戦 counts: 4 skill cards acquired (ワッペン 4 left), 2 changes, 12 P-drinks acquired (1 + 8 + 2 + 1 from 完全制覇でポン), 8 bought, 0 deleted, 差し入れ
+    もうすぐ本番ですね      素敵なお仕事 Vi+25 × 1 (1 left)      「基本」 change Vi+39 × 1 (1 left)      exam end Vi+37 × 2 (2 left)    Vi +138
+    よくやったな、倉本。     Dance SP lesson end Da+17 × 2          P-drink acquired Da+5 × 12                                            Da +94
+    ふわふわでワクワク       exam end Da+17 × 0 (spent in 選抜)     Dance SP lesson end Da+13 × 2                                         Da +26
+    なぜこんなところにッ！？  完全制覇でポン Da+30 × 1 (1 left)      Dance SP lesson end Da+17 × 2      SSR acquired Da+6 × 4             Da +88
+    放っておけない気になる子  P-drink bought Vo+11 × 8               deletion Vo+11 × 0                 差し入れ Vo+17 × 1                Vo +105
+    いつまでも続けばいいのに  Dance SP lesson end Da+17 × 2          SSR acquired Da+6 × 4              P-drink acquired Da+5 × 12        Da +118
+    abilities: Vo +105, Da +326, Vi +138 = 569
+    best placement: both lessons on Da (サブ on Vo), both 授業 on Vo
+    Vo 1982 + 136 + 105 + 360 = 2583    Da 2468 + 414 + 326 = 3208 → 3200 (cap)    Vi 1050 + 138 = 1188
+    total 6971; スター性 1335, so S5 needs 7044: not reachable, short by 73; S4+ needs 4544: reachable, 2427 to spare
+
+Milestone 3's guards, each broken in turn under `bun test src/engine` (2026-10-29): all 22 went red.
+- In the counting rule: the scenario restriction, the lesson-stat filter, the family default, stated conditions and fires left.
+- In the profiles: the refresh-based drink count, the インターバル drinks, メダルもじゃ's deletions, the played-for needs, the no-normal-lesson filter and the 選抜 exam count.
+- In the abilities: the パラメータボーナス+ exclusion, which first survived because every bonus effect in today's data is on プロデュース開始, and so gained its own test; unheld items, 選抜 use and ワッペン's need.
+- In `bestTotal`: panel occasions, item drinks, ワッペン limited by acquisitions, the 「暫定」 mark, the tie order, manual points and the day-3 override.
+
 
 ## Interfaces and Dependencies
 
@@ -569,28 +605,44 @@ Milestone 2 built these, in `src/data/`:
     export class CardDataError extends Error {}           // the message names the path of the first bad value
     export function parseCardData(json: unknown): CardDataFile;   // all or nothing (decision G23)
 
-At the end of Milestone 3 these must exist:
+Milestone 3 built these, in `src/engine/` (the Milestone 1 exports above stand, `Memory` extended):
 
-    // src/engine/types.ts
-    export type Stat = "vocal" | "dance" | "visual";
-    export interface Memory {
-      params: Record<Stat, number>;
-      bonusPermil: Record<Stat, number>;   // 59.8% → 598
-      star: number;
-      affection: number;                   // 28–37
-    }
+    // types.ts
+    export interface Memory { params; bonusPermil; star; affection;
+      refreshesLeft: number;               // 相談リフレッシュ回数 残り (G24)
+      medalMoja: boolean }                 // the first P-item is メダルもじゃ (G24)
     export interface DeckSlot { cardId: string; level: number }
-    export interface HeldItem { itemId: string; remaining: number }   // itemId "wappen" for H.I.Fワッペン
+    export const WAPPEN = "wappen";
+    export interface HeldItem { itemId: string; remaining?: number }   // remaining absent: no fire limit
     export interface RankLine { rank: string; rating: number; required: number; margin: number; provisional: boolean }
+    // schedule.ts (added)
+    export function scheduleGains(memory: Memory, placement: Placement): Record<Stat, number>;   // before the cap
+    export function capped(params: Record<Stat, number>, gains: Record<Stat, number>, cap: number): Record<Stat, number>;
+    // count.ts
+    export interface Counts { occasions; filters; conditions; lessons: Record<Stat, number> }   // filters: "occ.family.member" or "occ.family"
+    export function conditionKey(occasion: string, c: ConditionRef): string;
+    export function filterKey(occasion: string, f: FilterRef): string;
+    export function occurrences(trigger: ParsedTrigger, counts: Counts, left?: number): number;
+    // honsen-profile.ts
+    export type Day3 = "present" | "activity";
+    export const SENBATSU: Counts;                                   // G27
+    export function honsenCounts(input: HonsenInput): Counts;        // G24: { refreshesLeft, medalMoja, day3, lessons, needs, itemDrinks }
+    // abilities.ts
+    export interface Source { key: string; cardId: string; trigger: ParsedTrigger; left?: number }
+    export interface Ability extends Source { effect: ClassifiedEffect }
+    export interface DrinkSource extends Source { itemId: string; perFire: number }
+    export interface AbilityLine { key: string; cardId: string; effect: ClassifiedEffect; fires: number; points: number }
+    export function effectsAt(card: Card, level: number): readonly ClassifiedEffect[];
+    export function deckSources(deck, cards: ReadonlyMap<string, Card>, items, overrides): { abilities: Ability[]; drinks: DrinkSource[] };
+    export function needs(sources: readonly Source[], wappenLeft: number): Record<string, number>;
+    export function abilityLines(abilities: readonly Ability[], counts: Counts): AbilityLine[];
+    export function itemDrinks(drinks: readonly DrinkSource[], counts: Counts): number;
+    // total.ts
+    export interface PanelState { occasions?; filters?; conditions?; left?; day3?: Day3; uncounted?: Record<string, { stat: Stat; points: number }> }
+    export interface BestResult { placement; day3; counts; lines: AbilityLine[]; params; total; finalStar; ranks: RankLine[]; held: HeldCard[] }
+    export function bestTotal(memory: Memory, deck: readonly DeckSlot[], items: readonly HeldItem[], data: CardDataFile, panel: PanelState, cap: number): BestResult;
 
-    // src/engine/rating.ts
-    export function requiredTotal(rankRating: number, finalStar: number): number;
-    // src/engine/star.ts
-    export function bestFinalStar(input: { star: number; affection: number; wappenLeft: number }): number;
-    // src/engine/total.ts
-    export function bestTotal(memory: Memory, deck: DeckSlot[], items: HeldItem[], panel: PanelState, cap: number): BestResult;
-
-`PanelState` holds the overrides of G3, G4 and G12; `BestResult` holds the placement, the ability lines, the per-stat totals and the `RankLine` list. Exact shapes are fixed in Milestone 3 and recorded here.
+`src/test-support/dmm.ts` holds the DMM sample as engine input, with the card fixture, for the tests.
 
 Open items, carried until answered:
 - O1: answered for 本戦 on 2026-10-29 (decision G24). 選抜 counts are still open; decision G27's stopgap stands in for them.
@@ -620,3 +672,9 @@ Revision note (2026-10-29, Milestone 2 built): the sibling's pull request #57 me
 - Added the fixture-refresh steps, the Milestone 2 outcome, the loader's mutation record and the `src/data/` exports.
 
 Revision note (2026-10-29, Milestone 3 started): Milestone 2 merged (#7). The user answered O1 for 本戦: decisions G24–G26 record the answers and the UI rule. Decision G27 records the 選抜 stopgap. Two discoveries correct the DMM item descriptions and record what the DMM memory holds. O7 is new.
+
+Revision note (2026-10-29, Milestone 3 built): Milestone 3's code is in place. Changes:
+- Added decision G28 (smaller implementation choices) and a discovery: the DMM memory is 73 short of S5, not about 260.
+- Added the DMM breakdown worked by hand, the mutation record and the Milestone 3 outcome.
+- Recorded the modules' exports, and corrected Milestone 3's line shape and `bestTotal` signature to what was built.
+- Its acceptance, the user's line-by-line check, is still open.
