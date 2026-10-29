@@ -11,7 +11,7 @@ A player chasing S5 makes many 選抜試験メモリー and has to decide which 
 
 To see it working, run `bun run dev`, open `http://localhost:5173`, drop the two DMM sample screenshots, and read the S5 line. The worked example in `Artifacts and Notes` predicts what that line should say.
 
-The work is tracked on the GitHub board `tia-tools` project 1, one issue per milestone branch (decision G20): Milestone 1 is issue #4.
+The work is tracked on the GitHub board `tia-tools` project 1, one issue per milestone branch (decision G20): Milestone 1 was issue #4, and Milestone 2 is issue #6.
 
 
 ## Progress
@@ -23,8 +23,9 @@ The work is tracked on the GitHub board `tia-tools` project 1, one issue per mil
 - [ ] Open item O2: decide whether the sample screenshots may be committed as test fixtures in this public repository. Needed by Milestone 5.
 - [ ] Open item O3: choose the tia.run subdomain. Needed by Milestone 6.
 - [x] (2026-10-29 01:10Z) Milestone 1: toolchain, rating arithmetic, スター性 bound, schedule-only bound. Issue #4, branch `feature/m1-rating-schedule`: `bun test` 30 pass, type-check and lint clean, every guard seen red by mutation (`Artifacts and Notes`).
-- [ ] Milestone 1 merged into `develop` by a pull request that closes #4.
-- [ ] Milestone 2: the shared card data (sibling publishes it; this repo loads it).
+- [x] (2026-10-29 02:07Z) Milestone 1 merged into `develop` by pull request #5 (merge commit 841b7be), closing #4.
+- [ ] Milestone 2 (issue #6, branch `feature/m2-card-data`), sibling half: gakumas-supportcards publishes `dist/data/cards.v1.json` through its own pull request, worked by a session in that repository (decision G21).
+- [ ] Milestone 2, this repository's half: `src/data/contract.ts`, `src/data/load.ts` and a fixture from the sibling's real output. Waits on the sibling half.
 - [ ] Milestone 3: support abilities and P-items in 本戦; the full best-case bound.
 - [ ] Milestone 4: the form page and its Worker.
 - [ ] Milestone 5: reading the screenshots (prototype first).
@@ -141,6 +142,10 @@ The G-numbered decisions come from the design interview of 2026-10-28; the user'
 - Decision G20: Each milestone is one issue on the board `tia-tools` project 1, on its own branch from `develop`. The pull request that merges the branch into `develop` closes the issue. Milestone 1 is #4. Progress, decisions and discoveries stay in this plan, not on the issue.
   Rationale: The project's `task-board` workflow sizes an issue to one branch, and only the branch holding the claim may close it. This plan already gives each milestone its own branch.
   Date/Author: 2026-10-29, agent.
+
+- Decision G21: Milestone 2's change to gakumas-supportcards is made by a coding-agent session opened in that repository, not by a session of this one. This repository's half starts once the sibling's pull request is merged and its build writes the file.
+  Rationale: A session here runs in a sandbox that can write only this repository. A write probe in the sibling's checkout was refused with "Operation not permitted". Working there from here would need every build, test and git command run outside the sandbox. A session in the sibling also loads that repository's own `CLAUDE.md` rules, which its change has to follow.
+  Date/Author: 2026-10-29, user (chose this over working there unsandboxed, or writing this repository's half first against a guessed format).
 
 
 ## Outcomes & Retrospective
@@ -501,3 +506,5 @@ Revision note (2026-10-29): Milestone 1 implemented. Changes:
 - Added three discoveries (floating-point floors, the empty-`src/` checks, newer tool versions), the Milestone 1 outcome and the mutation record.
 - Recorded the modules' actual exports.
 - Revised Milestone 1's text to match what was built.
+
+Revision note (2026-10-29, later): Milestone 1 merged (#5). Milestone 2 is split in Progress into the sibling's half and this repository's half. Decision G21 records that the sibling's half runs in a session in that repository.
