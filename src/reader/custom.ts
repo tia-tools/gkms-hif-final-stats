@@ -37,6 +37,11 @@ const POSES: readonly Pose[] = [65, 66, 67, 68, 69, 70].flatMap((size) => [6, 7,
 
 /** Above this no accessory fits: the samples' accessories fit at 188 or better, the others at 1448 or worse. */
 export const ACCESSORY_FIT_MAX = 600;
+/**
+ * Above this the best character is not sure, however far it leads: the samples' characters fit at
+ * 1386 or better, and the nearest wrong one at 1795 or worse.
+ */
+export const CHARACTER_FIT_MAX = 1600;
 function fits<K extends string>(screen: Integral, frame: Frame, layers: readonly [K, IconTemplate][]): { name: K; score: number }[] {
   return layers
     .map(([name, t]) => ({ name, score: Math.min(...POSES.map((pose) => poseScore(screen, frame, t, pose))) }))
@@ -64,7 +69,7 @@ export function readCustom(screen: Integral, frame: Frame): CustomRead | null {
     ? margin(topAccessory.score, nextAccessory?.score)
     : Math.min(1, (topAccessory.score - ACCESSORY_FIT_MAX) / ACCESSORY_FIT_MAX);
   return {
-    character: { value: topCharacter.name, confidence: margin(topCharacter.score, nextCharacter?.score) },
+    character: { value: topCharacter.name, confidence: topCharacter.score <= CHARACTER_FIT_MAX ? margin(topCharacter.score, nextCharacter?.score) : 0 },
     accessory: { value: worn ? topAccessory.name : null, confidence: accessoryConfidence },
   };
 }

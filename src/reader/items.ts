@@ -9,7 +9,7 @@
 import { type Integral, boxMeanOf } from "./cards.ts";
 import { ITEM_PITCH } from "./kihon.ts";
 import { type Frame, boxOf } from "./layout.ts";
-import type { Raster } from "./raster.ts";
+import { type Raster, rgbAt } from "./raster.ts";
 
 export type SlotRole = "custom" | "pidol" | "scenario" | "support";
 
@@ -22,8 +22,7 @@ function share(r: Raster, frame: Frame, k: number, colour: (red: number, green: 
   let n = 0;
   for (let y = Math.round(b.y); y < b.y + b.h; y++) {
     for (let x = Math.round(b.x); x < b.x + b.w; x++) {
-      const i = (y * r.width + x) * 4;
-      if (colour(r.data[i] ?? 0, r.data[i + 1] ?? 0, r.data[i + 2] ?? 0)) on++;
+      if (colour(...rgbAt(r, x, y))) on++;
       n++;
     }
   }

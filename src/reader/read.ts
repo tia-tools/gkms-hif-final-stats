@@ -13,7 +13,7 @@ import { TILES, countLines, lineMask, litMarks, lvMask, tile } from "./hensei.ts
 import { AFFECTION, BONUSES, ITEM_SLOTS, PARAMS, STAR, badgeMask, fieldMask, itemIcon, slotState } from "./kihon.ts";
 import { type Frame, type Rect, boxOf, locate, shows } from "./layout.ts";
 import { type IconTemplate, type SlotRole, matchItem, slotRole } from "./items.ts";
-import type { Raster } from "./raster.ts";
+import { type Raster, rgbAt } from "./raster.ts";
 import { TEMPLATES } from "./templates.ts";
 
 /** A value read, and how sure: 0 a guess, 1 no other reading comes close. */
@@ -96,10 +96,7 @@ function present(r: Raster, frame: Frame, k: number): boolean {
   let n = 0;
   for (let y = Math.round(b.y); y < b.y + b.h; y++) {
     for (let x = Math.round(b.x); x < b.x + b.w; x++) {
-      const i = (y * r.width + x) * 4;
-      const red = r.data[i] ?? 0;
-      const green = r.data[i + 1] ?? 0;
-      const blue = r.data[i + 2] ?? 0;
+      const [red, green, blue] = rgbAt(r, x, y);
       if (Math.max(red, green, blue) - Math.min(red, green, blue) > 50) coloured++;
       n++;
     }

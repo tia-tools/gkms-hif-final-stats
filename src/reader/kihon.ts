@@ -6,7 +6,7 @@
 import type { Stat } from "../engine/types.ts";
 import { type Box, type Mask, inkMask } from "./glyphs.ts";
 import { type Frame, type Rect, boxOf } from "./layout.ts";
-import type { Raster } from "./raster.ts";
+import { type Raster, rgbAt } from "./raster.ts";
 
 export const STAR: Rect = { x: 90, y: -108, w: 80, h: 26 };
 export const PARAMS: Record<Stat, Rect> = {
@@ -45,10 +45,7 @@ function badgeBox(frame: Frame, k: number, rect: Rect = BADGE): Box {
   return { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.w), h: Math.round(b.h) };
 }
 
-function pixel(r: Raster, x: number, y: number): [number, number, number] {
-  const i = (y * r.width + x) * 4;
-  return [r.data[i] ?? 0, r.data[i + 1] ?? 0, r.data[i + 2] ?? 0];
-}
+const pixel = rgbAt;
 
 function badgeGrey(r: Raster, x: number, y: number): boolean {
   const [red, green, blue] = pixel(r, x, y);

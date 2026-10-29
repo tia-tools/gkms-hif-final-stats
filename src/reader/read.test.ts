@@ -85,6 +85,16 @@ describe("readScreenshot over the samples", () => {
     expect(read?.tab === "kihon" ? read.params.vocal : null).toEqual({ value: 9982, confidence: 0 });
   });
 
+  test("cut just below the 「Pアイテム」 row, the row still reads in full", async () => {
+    // The DMM 基本情報 sample ends 2 px below the icons' frames (at y 821), so the reads run up to the image's foot.
+    const full = await loadFixture("dmm-01-kihon");
+    const height = 821;
+    const read = readScreenshot({ width: full.width, height, data: full.data.slice(0, full.width * height * 4) }, refs);
+    if (read?.tab !== "kihon") throw new Error("not read as 基本情報");
+    expect(read.slots.map(slotDigit)).toEqual(KIHON["dmm-01"].slots);
+    expect(read.slots.map((s) => s.item?.value ?? null)).toEqual(KIHON["dmm-01"].icons);
+  });
+
   test("an image that is neither tab reads as null", () => {
     const data = new Uint8ClampedArray(720 * 1280 * 4).fill(250);
     expect(readScreenshot({ width: 720, height: 1280, data })).toBeNull();

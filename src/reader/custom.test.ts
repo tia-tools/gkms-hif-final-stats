@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { loadFixture } from "../test-support/png.ts";
 import { KIHON, SAMPLES } from "../test-support/samples.ts";
 import { integral } from "./cards.ts";
+import { payloadCheck } from "./custom-check.ts";
 import { STORED_LAYERS } from "./custom-templates.ts";
 import { isMedalMoja, readCustom } from "./custom.ts";
 import { type Frame, boxOf, locate } from "./layout.ts";
@@ -47,6 +48,25 @@ function paint(r: Raster, frame: Frame, layers: { rgb: string; cover: string }[]
   }
   return { width: r.width, height: r.height, data };
 }
+
+describe("the stored layer templates", () => {
+  test("each payload is what the generator wrote (its checksum recomputed)", () => {
+    for (const group of [STORED_LAYERS.characters, STORED_LAYERS.accessories]) {
+      for (const [name, layer] of Object.entries(group)) expect({ name, check: payloadCheck(layer.rgb, layer.cover) }).toEqual({ name, check: layer.check });
+    }
+  });
+});
+
+describe("no カスタム item to read", () => {
+  test("noise where the character should be reads as no sure character", async () => {
+    const { r, frame } = await kihon("iphone-15promax-01");
+    const data = new Uint8ClampedArray(r.data);
+    const b = boxOf(frame, { x: 8, y: 29, w: 67, h: 67 });
+    for (let y = Math.round(b.y); y < b.y + b.h; y++) for (let x = Math.round(b.x); x < b.x + b.w; x++) data.set((x >> 3) % 2 === (y >> 3) % 2 ? [255, 0, 255, 255] : [0, 255, 0, 255], (y * r.width + x) * 4);
+    const read = readCustom(integral({ ...r, data }), frame);
+    expect(read?.character.confidence).toBe(0);
+  });
+});
 
 describe("メダルもじゃ, painted", () => {
   test("もじゃ with the メダル is メダルもじゃ", async () => {

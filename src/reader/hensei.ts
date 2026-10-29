@@ -5,7 +5,7 @@
 
 import { type Box, type Mask, inkMask } from "./glyphs.ts";
 import { type Frame, type Rect, boxOf } from "./layout.ts";
-import type { Raster } from "./raster.ts";
+import { type Raster, rgbAt } from "./raster.ts";
 
 export const TILES = 6;
 /** Tile k of the 2 × 3 grid, row by row. */
@@ -22,10 +22,7 @@ function within(t: Rect, r: Rect): Rect {
   return { x: t.x + r.x, y: t.y + r.y, w: r.w, h: r.h };
 }
 
-function rgb(r: Raster, x: number, y: number): [number, number, number] {
-  const i = (y * r.width + x) * 4;
-  return [r.data[i] ?? 0, r.data[i + 1] ?? 0, r.data[i + 2] ?? 0];
-}
+const rgb = rgbAt;
 
 function pixelBox(frame: Frame, rect: Rect): Box {
   const b = boxOf(frame, rect);

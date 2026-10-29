@@ -9,7 +9,7 @@
  */
 
 import type { Box } from "./glyphs.ts";
-import type { Raster } from "./raster.ts";
+import { type Raster, rgbAt } from "./raster.ts";
 
 export type Tab = "kihon" | "hensei";
 
@@ -49,8 +49,7 @@ const SP_BLUE: Colour = (red, green, blue) => blue > 200 && red < 140 && green >
 const SP_YELLOW: Colour = (red, green, blue) => red > 200 && green > 150 && blue < 90;
 
 function is(r: Raster, x: number, y: number, colour: Colour): boolean {
-  const i = (Math.round(y) * r.width + Math.round(x)) * 4;
-  return colour(r.data[i] ?? 0, r.data[i + 1] ?? 0, r.data[i + 2] ?? 0);
+  return colour(...rgbAt(r, x, y));
 }
 
 /** The first row, from the top, holding at least `count` pixels of the colour in the left fifth. */
@@ -104,10 +103,7 @@ function locateHensei(r: Raster, unit: number): Frame | null {
 }
 
 function lightNeutral(r: Raster, x: number, y: number): boolean {
-  const i = (y * r.width + x) * 4;
-  const red = r.data[i] ?? 0;
-  const green = r.data[i + 1] ?? 0;
-  const blue = r.data[i + 2] ?? 0;
+  const [red, green, blue] = rgbAt(r, x, y);
   return Math.min(red, green, blue) > 215 && Math.max(red, green, blue) - Math.min(red, green, blue) < 25;
 }
 
