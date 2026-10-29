@@ -50,17 +50,19 @@ function seenItems(read: KihonRead, itemIds: ReadonlyMap<string, string>, unsure
 
 /**
  * The held P-items after the read: what the row shows, and the form's own items the read could not
- * rule out, kept and marked. An item is ruled out only when its icon was compared with every slot
- * and the row is whole; ワッペン, when the row shows its slot.
+ * rule out, kept and marked. An item is ruled out only when its icon was compared with every slot,
+ * the row is whole and every サポート slot it shows matched an item; ワッペン, when the row shows its
+ * slot. A slot that matched nothing may hold an item no card grants, or one the matcher missed.
  */
 function heldItems(form: FormState, read: KihonRead, itemIds: ReadonlyMap<string, string>, unsure: string[]): Record<string, number | null> {
   const items = seenItems(read, itemIds, unsure);
   const compared = new Set(itemIds.values());
   const rowCut = read.slots.some((s) => s.state === "hidden");
+  const unmatched = read.slots.some((s) => s.role === "support" && s.item === null && (s.state === "none" || s.state === "badge"));
   const wappenSeen = read.slots.some((s) => s.role === "scenario" && s.state !== "absent" && s.state !== "hidden");
   for (const [id, left] of Object.entries(form.items)) {
     if (id in items) continue;
-    const ruledOut = id === WAPPEN ? wappenSeen : !rowCut && compared.has(id);
+    const ruledOut = id === WAPPEN ? wappenSeen : !rowCut && !unmatched && compared.has(id);
     if (ruledOut) continue;
     items[id] = left;
     unsure.push(`items.${id}`);

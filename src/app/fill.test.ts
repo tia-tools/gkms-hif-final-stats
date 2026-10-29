@@ -78,10 +78,19 @@ describe("fromKihon", () => {
 
   test("an item the form holds is dropped only when the read rules it out", () => {
     const form = { ...emptyForm(), items: { "pitem_00-3-352-0": 1, "pitem_03-3-263-0": 1, "pitem_x": 2 } };
-    // pitem_03-3-263-0 was compared and is spent; pitem_x's icon was never compared, so it stays, marked.
-    const { patch, unsure: check } = fromKihon(form, kihon(), ITEM_IDS);
+    // Every サポート slot matched: pitem_03-3-263-0 is ruled out (spent); pitem_x's icon was never compared, so it stays, marked.
+    const whole = kihon().slots.filter((_, k) => k !== 4);
+    const { patch, unsure: check } = fromKihon(form, kihon({ slots: whole }), ITEM_IDS);
     expect(patch.items).toEqual({ [WAPPEN]: 4, "pitem_00-3-352-0": 1, "pitem_00-2-004-0": null, pitem_x: 2 });
     expect(check).toEqual(["items.pitem_x"]);
+  });
+
+  test("a サポート slot that matched nothing rules no held item out", () => {
+    const form = { ...emptyForm(), items: { "pitem_03-3-263-0": 1 } };
+    // Slot 4 shows an icon no template fits: it may be pitem_03-3-263-0, missed.
+    const { patch, unsure: check } = fromKihon(form, kihon(), ITEM_IDS);
+    expect(patch.items?.["pitem_03-3-263-0"]).toBe(1);
+    expect(check).toEqual(["items.pitem_03-3-263-0"]);
   });
 
   test("a row cut at the image's edge rules nothing out, and ワッペン stays when its slot is not shown", () => {
