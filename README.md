@@ -31,11 +31,11 @@ The total a rank needs depends on the memory's best final スター性, with bot
 Under the result:
 - **The breakdown** shows the best lesson and 授業 placement and every ability that fires.
 - **The folded カウント panel** lists every count the bound used: how many P-drinks are acquired, how many skill cards, each ability's fires left, and more. Each count can be changed, and ↺ puts it back.
-- **「未計上」 entries:** a support card whose ability the card data cannot count yet is listed here, with a points field. Until each such entry has a value, 0 included, a "not reachable" line reads 「暫定」 (provisional).
+- **「未計上」 entries:** a support card with an ability the card data could not read is listed here, once per such ability, with a points field. Until each such entry has a value, 0 included, a "not reachable" line reads 「暫定」 (provisional).
 
 ## Sources
 
-- **Card data and art:** support card data, thumbnails and P-item icons come at runtime from [gakumas-supportcards](https://gakumas-supportcards.tia.run) ([tia-tools/gakumas-supportcards](https://github.com/tia-tools/gakumas-supportcards)), so a new card works here the day that site has it.
+- **Card data and art:** support card data, thumbnails and P-item icons come at runtime from [gkms-library](https://gkms-library.tia.run) ([tia-tools/gkms-library](https://github.com/tia-tools/gkms-library)), which publishes them from the game twice a day, so a new card works here within minutes of the library having it.
 - **The H.I.F. rules:** the rating formula, the 本戦 schedule and the スター性 rules come from the community wikis (wikiwiki 「HIF/基本情報」, seesaawiki 「H.I.F」) and [gakumas-tools](https://github.com/gakumas-tools/gakumas-tools).
 
 This is a fan-made tool.
@@ -51,15 +51,15 @@ The stack is Bun 1.4, TypeScript 7, Vite, Preact and Tailwind 4, with Oxlint for
     bun run lint
     bun run build        # writes dist/
 
-The dev server takes the card data and images from a gakumas-supportcards checkout beside this one, or from `SUPPORTCARDS_DIR`. Without one, it serves the committed card file and no images, so a screenshot's cards and P-items cannot be matched.
+The dev server, like the live page, reads the card data and images from gkms-library's address, so it needs the network.
 
 Where things are:
 - `src/engine/` holds the arithmetic, pure TypeScript with no DOM.
-- `src/data/` reads the card data against its contract.
+- `src/data/` fetches the card data and checks it with gkms-library's own format files.
 - `src/reader/` reads the screenshots by measured layout and templates, with no OCR and no model (`docs/adr/0002`).
 - `src/app/` is the page.
-- `infra/worker/` is the Cloudflare Worker that serves the page, the images and the card data.
+- `infra/worker/` deploys the built page to Cloudflare as static assets.
 
-`CLAUDE.md` maps every module. The design and how it was built are in `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, and the lasting decisions are in `docs/adr/`.
+`CLAUDE.md` maps every module. The design and how it was built are in `docs/plans/EXECPLAN_HIF_FINAL_STATS.md` (and the move to gkms-library in `docs/plans/EXECPLAN_LIBRARY_DATA.md`), and the lasting decisions are in `docs/adr/`.
 
 Changes go through pull requests into `develop`, where CI runs the tests, the type check, the lint and the build. `main` is production: a release is a pull request from `develop` into `main`, and merging it deploys the site (`infra/worker/README.md`).

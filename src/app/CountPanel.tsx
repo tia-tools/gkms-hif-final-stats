@@ -19,7 +19,7 @@ const DAY3: readonly [Day3 | undefined, string][] = [
 ];
 
 function Uncounted({ result, panel, onPanel }: Omit<Props, "names">) {
-  const entries = result.held.flatMap((h) => (h.reasons.length > 0 ? h.reasons : [""]).map((reason, i) => ({ key: uncountedKey(h.id, i), name: h.name, reason })));
+  const entries = result.uncounted.flatMap((u) => u.reasons.map((reason, i) => ({ key: uncountedKey(u.cardId, i), name: u.name, reason })));
   const set = (key: string, value: { stat: Stat; points: number } | null) => {
     const next = { ...panel.uncounted };
     if (value === null) delete next[key];

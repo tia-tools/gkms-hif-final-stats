@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { CARD_DATA_ROUTE } from "./data.ts";
 
 const config: unknown = Bun.TOML.parse(await Bun.file(new URL("./wrangler.toml", import.meta.url)).text());
 
@@ -16,15 +15,10 @@ describe("wrangler.toml", () => {
     expect(root["routes"]).toEqual([{ pattern: "gkms-hif-final-stats.tia.run", custom_domain: true }]);
   });
 
-  test("runs the Worker first exactly on the paths worker.ts answers, and serves dist/ for the rest", () => {
-    const assets = table(root["assets"]);
-    expect(assets["directory"]).toBe("../../dist");
-    expect(assets["binding"]).toBe("ASSETS");
-    expect(assets["run_worker_first"]).toEqual(["/img/*", CARD_DATA_ROUTE]);
-  });
-
-  test("binds the sibling's bucket as IMAGES, the name the Worker's Env reads", () => {
-    expect(root["r2_buckets"]).toEqual([{ binding: "IMAGES", bucket_name: "tia-assets" }]);
+  test("serves dist/ for every path, with no code of its own and no binding (the library plan's L5)", () => {
+    expect(root["main"]).toBeUndefined();
+    expect(table(root["assets"])).toEqual({ directory: "../../dist" });
+    expect(root["r2_buckets"]).toBeUndefined();
   });
 
   // An [env.*] table inherits the top-level routes, custom domain included: deployed, it would offer
