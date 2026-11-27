@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded-by-0003
 ---
 
 # Card data and art are shared with gakumas-supportcards at runtime, not copied
@@ -15,3 +15,5 @@ Update (2026-10-29, Milestone 5): the screenshot reader matches support tiles ag
 Update (2026-10-29, Milestone 6): implemented in full, and live. This app's Worker at `https://gkms-hif-final-stats.tia.run` binds `tia-assets` read only, serving `/img/w192/*` and `/img/w48/*` (any other `/img/` path, `master/` included, is a 404). It also passes the sibling's `cards.v1.json` through as `/data/cards.json`, byte-identical to the fixture that day. The page reads the art and the card data from there. Evidence: the plan's Progress for Milestone 6 (the deploy run, `infra/worker/README.md` § Verify, and every sample pair read on the live page).
 
 Note (2026-10-29): the app's name, and with it its domain, was corrected from `gmks-hif-final-stats` to `gkms-hif-final-stats` (issue #27). The Milestone 6 update above was checked at the old domain and now names the new one.
+
+Superseded (2026-11-27): the card data and the images now come from gkms-library, fetched by the browser, and this app's Worker no longer binds `tia-assets` or proxies `cards.v1.json` (`docs/adr/0003-card-data-and-art-come-from-gkms-library-fetched-by-the-browser.md`). Reading live, with no vendored copy the app itself reads, still stands.
