@@ -23,7 +23,7 @@ How to see it working: `bun run dev`, open `http://localhost:5173`, and watch th
 - [x] (2026-11-27 13:31Z) Milestone 4, part one: `infra/worker/img.ts` and its test removed; `worker.ts` answers only `/data/cards.json`; `wrangler.toml` runs the Worker first for that path alone and binds no bucket (`wrangler.test.ts` pins both). 237 pass, type check and lint clean.
 - [x] (2026-11-27 14:35Z) Milestone 4, remaining: `docs/adr/0003-card-data-and-art-come-from-gkms-library-fetched-by-the-browser.md` written, ADR 0001 marked superseded (its text kept); `CLAUDE.md`, `README.md` and `infra/worker/README.md` describe the library and the assets-only deployment.
 - [x] (2026-11-27 14:38Z) Codex review of the branch's whole diff against `develop` (fixtures excluded), codex-cli 0.150.1 in a read-only snapshot: `CODEX VERDICT: LGTM`, no findings to act on (sandbox held; the repository's refs unchanged). Gates on HEAD: 234 pass, type check, lint and build clean.
-- [x] (2026-11-27 14:41Z) Pushed `feat/gkms-library` on the user's approval (job #36) and opened PR #37 into `develop` (`Closes #34`).
+- [x] (2026-11-27 14:58Z) Pushed `feat/gkms-library` on the user's approval (job #36) and opened PR #37 into `develop` (`Closes #34`).
 - [ ] The user merges PR #37.
 - [ ] Milestone 5: the release (a PR from `develop` into `main`, merged by the user) and the live check that nothing reads `gakumas-supportcards.tia.run`.
 
