@@ -20,11 +20,11 @@ describe("wrangler.toml", () => {
     const assets = table(root["assets"]);
     expect(assets["directory"]).toBe("../../dist");
     expect(assets["binding"]).toBe("ASSETS");
-    expect(assets["run_worker_first"]).toEqual(["/img/*", CARD_DATA_ROUTE]);
+    expect(assets["run_worker_first"]).toEqual([CARD_DATA_ROUTE]);
   });
 
-  test("binds the sibling's bucket as IMAGES, the name the Worker's Env reads", () => {
-    expect(root["r2_buckets"]).toEqual([{ binding: "IMAGES", bucket_name: "tia-assets" }]);
+  test("binds no bucket: the images come from gkms-library's address", () => {
+    expect(root["r2_buckets"]).toBeUndefined();
   });
 
   // An [env.*] table inherits the top-level routes, custom domain included: deployed, it would offer

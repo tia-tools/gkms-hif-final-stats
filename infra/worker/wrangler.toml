@@ -9,15 +9,9 @@ routes = [
   { pattern = "gkms-hif-final-stats.tia.run", custom_domain = true }
 ]
 
-# The built page (`bun run build` at the repository root writes dist/). Only the two paths the
-# Worker answers (worker.ts `route`) run its code first; everything else is served from the assets.
+# The built page (`bun run build` at the repository root writes dist/). Only the path the Worker
+# answers (worker.ts `route`) runs its code first; everything else is served from the assets.
 [assets]
 directory = "../../dist"
 binding = "ASSETS"
-run_worker_first = ["/img/*", "/data/cards.json"]
-
-# The sibling's image library (ADR 0001), read only: img.ts never writes, and no request path maps
-# to its private master/ prefix.
-[[r2_buckets]]
-binding = "IMAGES"
-bucket_name = "tia-assets"
+run_worker_first = ["/data/cards.json"]

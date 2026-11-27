@@ -20,7 +20,8 @@ How to see it working: `bun run dev`, open `http://localhost:5173`, and watch th
 - [x] (2026-11-27 13:28Z) Milestone 1: `src/data/cards.ts` reads `support-cards` v1 through the library's own `parse` (format files copied, hashes pinned in `src/data/formats.test.ts`); `BestResult.uncounted` from `unread` drives 「未計上」; `hif_memory` counts as H.I.F.; `plan` family labelled; fixture and the reader's image snapshot refreshed from the library. `bun test` 245 pass, type check, lint and build clean.
 - [ ] Milestone 2: fetch the data from the library, as job #35 decides.
 - [x] (2026-11-27 13:29Z) Milestone 3: `src/app/images.ts` points at `https://gkms-library.tia.run/img/…` (pinned by `src/app/images.test.ts`); the dev server's `/img/*` route and its gakumas-supportcards checkout (`SUPPORTCARDS_DIR`) are gone, and its `/data/cards.json` serves the library fixture until Milestone 2. 246 pass, type check and lint clean. Not yet seen in a browser.
-- [ ] Milestone 4: the Worker's image route and its bucket binding go; ADR 0003 supersedes ADR 0001; `CLAUDE.md`, the README and the Worker README follow.
+- [x] (2026-11-27 13:31Z) Milestone 4, part one: `infra/worker/img.ts` and its test removed; `worker.ts` answers only `/data/cards.json`; `wrangler.toml` runs the Worker first for that path alone and binds no bucket (`wrangler.test.ts` pins both). 237 pass, type check and lint clean.
+- [ ] Milestone 4, remaining: ADR 0003 supersedes ADR 0001; `CLAUDE.md`, `README.md` and `infra/worker/README.md` follow. Waits for Milestone 2, which decides whether the Worker keeps any code.
 - [ ] Milestone 5: the release (a PR from `develop` into `main`, merged by the user) and the live check that nothing reads `gakumas-supportcards.tia.run`.
 
 ## Surprises & Discoveries
