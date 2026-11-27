@@ -4,7 +4,7 @@
  * per stat; the best one, and every rank's required total and margin against it.
  */
 
-import type { CardDataFile, HeldCard } from "../data/contract.ts";
+import type { CardDataFile } from "../data/cards.ts";
 import { type Ability, type AbilityLine, type DrinkLine, type DrinkSource, abilityLines, deckSources, drinkLines, needs } from "./abilities.ts";
 import type { Counts } from "./count.ts";
 import { type Day3, honsenCounts } from "./honsen-profile.ts";
@@ -28,9 +28,33 @@ export interface PanelState {
   uncounted?: Readonly<Record<string, { stat: Stat; points: number }>>;
 }
 
-/** The panel's name for a held deck card's reason: the card id and the reason's place in its list. */
+/** The panel's name for a deck card's unread reason: the card id and the reason's place in its list. */
 export function uncountedKey(cardId: string, reason: number): string {
   return `${cardId}#${reason}`;
+}
+
+/** A deck card with effects the library could not read, which are left out of the card. */
+export interface UncountedCard {
+  cardId: string;
+  name: string;
+  /** The library's reasons, in its order (by reason within the card). */
+  reasons: string[];
+}
+
+/**
+ * The library's `unread` entries for the deck's cards, one per card in the list's order. Every entry
+ * is an effect missing from its card, so each one needs the player's points (the library plan's L2).
+ */
+export function uncountedCards(data: CardDataFile, deck: readonly DeckSlot[]): UncountedCard[] {
+  const inDeck = new Set(deck.map((slot) => slot.cardId));
+  const byCard = new Map<string, UncountedCard>();
+  for (const u of data.unread) {
+    if (!inDeck.has(u.cardId)) continue;
+    const card = byCard.get(u.cardId);
+    if (card === undefined) byCard.set(u.cardId, { cardId: u.cardId, name: u.cardName, reasons: [u.reason] });
+    else card.reasons.push(u.reason);
+  }
+  return [...byCard.values()];
 }
 
 export interface BestResult {
@@ -45,8 +69,8 @@ export interface BestResult {
   total: number;
   finalStar: number;
   ranks: RankLine[];
-  /** The deck's cards the card data holds back, with the reasons (decision G12). */
-  held: HeldCard[];
+  /** The deck's cards with effects the library could not read, each reason one 「未計上」 entry (decision G12; the library plan's L2). */
+  uncounted: UncountedCard[];
 }
 
 interface Context {
@@ -59,7 +83,7 @@ interface Context {
   cap: number;
 }
 
-type Candidate = Omit<BestResult, "finalStar" | "ranks" | "held">;
+type Candidate = Omit<BestResult, "finalStar" | "ranks" | "uncounted">;
 
 function withPanel(counts: Counts, panel: PanelState): Counts {
   return {
@@ -116,9 +140,8 @@ export function bestTotal(
   const wappen = items.find((item) => item.itemId === WAPPEN);
   // Never more than the item's 20 fires per run, whatever was typed.
   const wappenLeft = wappen === undefined ? 0 : Math.min(WAPPEN_FIRES_PER_RUN, wappen.remaining ?? WAPPEN_FIRES_PER_RUN);
-  const held = data.held.filter((h) => deck.some((slot) => slot.cardId === h.id));
-  // A held card always leaves something to decide: one entry even if its reason list is empty.
-  const reasons = held.flatMap((h) => Array.from({ length: Math.max(1, h.reasons.length) }, (_, i) => uncountedKey(h.id, i)));
+  const uncounted = uncountedCards(data, deck);
+  const reasons = uncounted.flatMap((u) => u.reasons.map((_, i) => uncountedKey(u.cardId, i)));
   const manual = reasons.flatMap((key) => panel.uncounted?.[key] ?? []);
   const ctx: Context = { memory, abilities, drinks, needs: needs([...abilities, ...drinks], wappenLeft), manual, panel, cap };
   const days: readonly Day3[] = panel.day3 === undefined ? ["present", "activity"] : [panel.day3];
@@ -128,5 +151,5 @@ export function bestTotal(
   const acquired = best.counts.occasions["GetProduceCard"] ?? 0;
   const finalStar = bestFinalStar({ star: memory.star, affection: memory.affection, wappenLeft: Math.min(wappenLeft, acquired) });
   const provisional = reasons.some((key) => panel.uncounted?.[key] === undefined);
-  return { ...best, finalStar, ranks: rankLines(best.total, finalStar, provisional), held };
+  return { ...best, finalStar, ranks: rankLines(best.total, finalStar, provisional), uncounted };
 }

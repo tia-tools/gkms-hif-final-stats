@@ -18,7 +18,7 @@ describe("pickable", () => {
 
   test("puts SSR first and the newest first within a rarity", () => {
     const cards = pickable(CARD_DATA.cards, all);
-    expect(cards.length).toBe(210);
+    expect(cards.length).toBe(CARD_DATA.cards.length);
     expect(cards[0]?.rarity).toBe("ssr");
     expect(cards.at(-1)?.rarity).toBe("r");
     const ssr = cards.filter((c) => c.rarity === "ssr").map((c) => c.id);

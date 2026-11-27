@@ -5,7 +5,7 @@
  */
 
 import { useRef, useState } from "preact/hooks";
-import type { Card, CardDataFile } from "../data/contract.ts";
+import type { Card, CardDataFile } from "../data/cards.ts";
 import { type References, readScreenshot } from "../reader/read.ts";
 import { type Filled, fromHensei, fromKihon, touchedKeys } from "./fill.ts";
 import type { FormState } from "./form.ts";

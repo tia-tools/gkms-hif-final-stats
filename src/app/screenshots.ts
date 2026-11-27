@@ -4,7 +4,7 @@
  * `src/reader/`, and what it puts into the form is `fill.ts`.
  */
 
-import type { CardDataFile } from "../data/contract.ts";
+import type { CardDataFile } from "../data/cards.ts";
 import { integral } from "../reader/cards.ts";
 import { iconTemplate } from "../reader/items.ts";
 import type { Raster } from "../reader/raster.ts";
@@ -38,8 +38,8 @@ async function fetched(url: string): Promise<Raster | null> {
 }
 
 /**
- * Every card's thumbnail and every card-granted item's icon, from the Worker's `/img/*` (ADR
- * 0001). A card or item whose image the library lacks is left out, and so is never a candidate.
+ * Every card's thumbnail and every card-granted item's icon, from gkms-library's address
+ * (`images.ts`). A card or item whose image the library lacks is left out, and so is never a candidate.
  */
 export async function loadReferences(data: CardDataFile): Promise<References> {
   const thumbs = new Map<string, ReturnType<typeof integral>>();

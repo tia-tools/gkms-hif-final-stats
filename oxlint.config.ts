@@ -50,13 +50,5 @@ export default defineConfig({
       files: ["**/*.test.ts", "**/*.test.tsx"],
       rules: { "max-lines-per-function": ["error", { max: 120, skipBlankLines: true, skipComments: true }] },
     },
-    {
-      // vite.config.ts serves local files in the dev server only: the card file at one fixed path
-      // and /img/* only after infra/worker/img.ts imageKey has matched the path against the
-      // game's image names. No path comes from outside input. Remove the entry if the dev server
-      // starts taking a file path from a request.
-      files: ["vite.config.ts"],
-      rules: { "security/detect-non-literal-fs-filename": "off" },
-    },
   ],
 });

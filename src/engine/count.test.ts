@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ParsedTrigger } from "../data/contract.ts";
+import type { ParsedTrigger } from "../data/cards.ts";
 import { type Counts, conditionKey, occurrences } from "./count.ts";
 
 const COUNTS: Counts = {
@@ -54,6 +54,8 @@ describe("occurrences", () => {
   test("a trigger restricted to another scenario never fires; one for H.I.F. does", () => {
     expect(occurrences(trigger({ occasion: "GetProduceCard", scenario: "produce-001" }), COUNTS)).toBe(0);
     expect(occurrences(trigger({ occasion: "GetProduceCard", scenario: "hif" }), COUNTS)).toBe(4);
+    expect(occurrences(trigger({ occasion: "GetProduceCard", scenario: "hif_memory" }), COUNTS)).toBe(4);
+    expect(occurrences(trigger({ occasion: "GetProduceCard", scenario: "nia_master" }), COUNTS)).toBe(0);
   });
 
   test("takes the smallest of every narrowing at once", () => {

@@ -2,15 +2,14 @@
  * The DMM sample in temp/dmm/01/ as engine input, for tests: the memory read off its 基本情報 tab,
  * the deck off its 編成 tab (cards matched by art, levels by eye), and the P-items it holds
  * (docs/plans/EXECPLAN_HIF_FINAL_STATS.md § Surprises & Discoveries). Card data is the fixture,
- * gakumas-supportcards' real cards.v1.json.
+ * a real release of gkms-library's support-cards v1.
  */
 
-import type { CardDataFile } from "../data/contract.ts";
-import { parseCardData } from "../data/load.ts";
+import { type CardDataFile, parseCardData } from "../data/cards.ts";
 import { type DeckSlot, type HeldItem, type Memory, WAPPEN } from "../engine/types.ts";
 
 export const CARD_DATA: CardDataFile = parseCardData(
-  JSON.parse(await Bun.file(new URL("../data/fixtures/cards.v1.json", import.meta.url)).text()),
+  JSON.parse(await Bun.file(new URL("../data/fixtures/support-cards.v1.json", import.meta.url)).text()),
 );
 
 export const DMM_MEMORY: Memory = {

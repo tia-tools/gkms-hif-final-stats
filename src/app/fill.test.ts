@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { Card } from "../data/contract.ts";
+import type { Card } from "../data/cards.ts";
 import { WAPPEN } from "../engine/types.ts";
 import type { CustomRead } from "../reader/custom.ts";
 import type { HenseiRead, KihonRead, Read, TileRead } from "../reader/read.ts";

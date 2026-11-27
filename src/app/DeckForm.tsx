@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks";
-import type { Card, LevelLimits } from "../data/contract.ts";
+import type { Card, LevelLimits } from "../data/cards.ts";
 import type { DeckSlot } from "../engine/types.ts";
 import { CardPicker } from "./CardPicker.tsx";
 import { WholeField, mark } from "./Fields.tsx";

@@ -5,7 +5,7 @@
  * and an empty deck, the memory alone is computed, as the manual form.
  */
 
-import type { CardDataFile } from "../data/contract.ts";
+import type { CardDataFile } from "../data/cards.ts";
 import { type BestResult, bestTotal } from "../engine/total.ts";
 import type { DeckSlot, HeldItem } from "../engine/types.ts";
 import { type FormState, memoryOf } from "./form.ts";
@@ -15,7 +15,7 @@ export type Computed =
   | { result: null; problem: null }
   | { result: null; problem: { unknownCards: string[] } | { noCardData: true } | { error: string } };
 
-const NO_CARDS: CardDataFile = { formatVersion: 1, levelLimits: { r: [20, 25, 30, 35, 40], sr: [30, 35, 40, 45, 50], ssr: [40, 45, 50, 55, 60] }, cards: [], held: [] };
+const NO_CARDS: CardDataFile = { formatVersion: 1, levelLimits: { r: [20, 25, 30, 35, 40], sr: [30, 35, 40, 45, 50], ssr: [40, 45, 50, 55, 60] }, cards: [], unread: [] };
 
 export function compute(form: FormState, data: CardDataFile | null, cap: number): Computed {
   const deck = form.deck.filter((s): s is DeckSlot => s !== null);

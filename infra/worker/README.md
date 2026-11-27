@@ -1,12 +1,6 @@
 # gkms-hif-final-stats.tia.run Worker
 
-One Cloudflare Worker serves the whole page: the built page as static assets, card thumbnails and P-item icons from the R2 bucket `tia-assets`, read only, and the sibling's card data at this origin (`docs/adr/0001`; `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`, decisions G14, G31 and G34). `wrangler.toml` runs the Worker's code only for `/img/*` and `/data/cards.json` (`run_worker_first`); every other path is answered by the assets directly. `wrangler.test.ts` keeps that list equal to the paths `worker.ts` answers.
-
-| Route | Serves |
-|---|---|
-| `https://gkms-hif-final-stats.tia.run/` | the page built by `bun run build` (`dist/`) |
-| `/img/w192/img_general_{assetId}_full.webp`, `/img/w48/img_general_pitem_{r}-{nnn}.webp` | a card thumbnail or a P-item icon from `tia-assets`, through `img.ts`, adopted unchanged from gakumas-supportcards; any other `/img/` path, the private `master/` prefix included, is a 404 marked `no-store` |
-| `/data/cards.json` | gakumas-supportcards' `https://gakumas-supportcards.tia.run/data/cards.v1.json`, passed through with an hour's cache; a failure upstream is a 502 marked `no-store` (`data.ts`) |
+One Cloudflare Worker serves the page: the built page (`bun run build` writes `dist/`) as static assets, for every path, with no code of its own and no binding. The card data and the card art and item icons come from gkms-library's address (`https://gkms-library.tia.run`), fetched by the browser (`docs/adr/0003`; `docs/plans/EXECPLAN_LIBRARY_DATA.md`, decision L5). Until 2026-11-27 the Worker also served `/img/*` from the R2 bucket `tia-assets` and passed gakumas-supportcards' `cards.v1.json` through as `/data/cards.json` (`docs/adr/0001`, now superseded). `wrangler.test.ts` pins that it has neither code nor binding.
 
 Hostname policy (tia-tools convention): each app lives on its own single-level subdomain of `tia.run`. The zone's free Universal SSL certificate covers no second level.
 
@@ -35,7 +29,7 @@ Changing `name` in `wrangler.toml` does not rename the deployed Worker: the next
 
 This happened once, when `gmks-hif-final-stats` became `gkms-hif-final-stats` on 2026-10-29 (issue #27).
 
-Binding the R2 bucket needs no R2 permission: deploying a Worker never needs permissions on the resources it binds. Source: Cloudflare's [Workers roles and permissions](https://developers.cloudflare.com/workers/authorization/workers/), read 2026-10-29. If a deploy still fails with a permissions error, the message names the missing permission. Add that one, and record which.
+The Worker keeps its name when it became assets only (2026-11-27), so the release that made it so updates the existing Worker under the same token; it is not a first deployment. If a deploy still fails with a permissions error, the message names the missing permission. Add that one, and record which.
 
 By hand, for the first deployment or an emergency, with `bunx wrangler login` on the account that holds `tia.run`. Run from the repository root:
 
@@ -47,26 +41,22 @@ The `custom_domain` route makes Cloudflare attach the Worker to `gkms-hif-final-
 
     bunx wrangler deploy --dry-run --outdir "$TMPDIR/wrangler-out"
 
-It prints the bindings (`env.IMAGES (tia-assets)`, `env.ASSETS`). Under the Claude Code sandbox on macOS it also reports two harmless refusals: it cannot write its log under `~/Library/Preferences/.wrangler`, and its telemetry host is refused. The log is Wrangler's own; the sandbox allows no write there.
+It prints the assets it read and `No bindings found.` Under the Claude Code sandbox on macOS it also reports two harmless refusals: it cannot write its log under `~/Library/Preferences/.wrangler`, and its telemetry host is refused. The log is Wrangler's own; the sandbox allows no write there.
 
 ## Verify
 
     curl -sI https://gkms-hif-final-stats.tia.run/ | head -3
     # -> HTTP/2 200, content-type: text/html
-    curl -s https://gkms-hif-final-stats.tia.run/data/cards.json | jq '.formatVersion, (.cards | length)'
-    # -> 1, then the number of cards the sibling publishes
-    curl -sI https://gkms-hif-final-stats.tia.run/img/w192/img_general_csprt-3-0099_full.webp
-    # -> HTTP/2 200, content-type: image/webp, cache-control: public, max-age=31536000, immutable
-    curl -sI https://gkms-hif-final-stats.tia.run/img/master/img_general_csprt-3-0099_full.webp
-    # -> HTTP/2 404, cache-control: no-store   (a master must be refused even where it exists)
+    curl -s -o /dev/null -w '%{http_code} %{content_type}\n' https://gkms-hif-final-stats.tia.run/data/cards.json
+    # -> 404: no data route any more, and the assets have no such file
+    curl -s https://gkms-library.tia.run/data/latest.v1.json | jq '.files[] | select(.format == "support-cards") | .path'
+    # -> the release the page will fetch
 
-Then open the page, drop the DMM sample's two screenshots (`src/reader/fixtures/dmm-01-kihon.png` and `dmm-01-hensei.png`), and check that it reads 6971, S5 short by 73, as `bun run dev` does (Milestone 6's acceptance).
+Open the page with the browser's network panel: the card data (`latest.v1.json`, then `data/support-cards/v1/<release>.json`) and every image come from `gkms-library.tia.run`, and no request names `gakumas-supportcards.tia.run`. Then open the page, drop the DMM sample's two screenshots (`src/reader/fixtures/dmm-01-kihon.png` and `dmm-01-hensei.png`), and check that it reads 6971, S5 short by 73, as `bun run dev` does (the acceptance of Milestone 6 in `docs/plans/EXECPLAN_HIF_FINAL_STATS.md`).
 
 ## Tests
 
 `bun test` at the repository root runs:
-- `img.test.ts` against a fake bucket;
-- `data.test.ts` and `worker.test.ts` against a fake upstream;
 - `wrangler.test.ts` over this directory's `wrangler.toml`;
 - `../workflows.test.ts` over the two workflows.
 

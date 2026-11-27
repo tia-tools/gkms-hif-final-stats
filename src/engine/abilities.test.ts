@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { Card } from "../data/contract.ts";
+import type { Card } from "../data/cards.ts";
 import { CARD_DATA, DMM_DECK, DMM_ITEMS } from "../test-support/dmm.ts";
 import { type Ability, abilityLines, deckSources, effectsAt, itemDrinks, needs } from "./abilities.ts";
 import type { Counts } from "./count.ts";

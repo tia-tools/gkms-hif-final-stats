@@ -15,6 +15,10 @@ describe("triggerLabel, on the DMM deck's triggers", () => {
     expect(triggerLabel({ occasion: "ChangeProduceCard", filters: [{ family: "cardName", member: "starter" }] })).toBe("スキルカードチェンジ時（名前に「基本」）");
   });
 
+  test("words the plan family the library carries (s_card-3-0114's trigger)", () => {
+    expect(triggerLabel({ occasion: "GetProduceCard", filters: [{ family: "plan", member: "logic" }] })).toBe("スキルカード獲得時（ロジック）");
+  });
+
   test("falls back to the game's own word for one it does not know", () => {
     expect(occasionLabel("SomethingNew")).toBe("SomethingNew");
     expect(memberLabel("effectGroup", "new_group")).toBe("new_group");
