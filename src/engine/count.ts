@@ -7,14 +7,17 @@
  *                                             count, else the family's, else the occasion's: decision G25),
  *                      each condition's count where one is stated (unstated = met every time),
  *                      the fires left )
- * and 0 when the trigger is restricted to a scenario other than H.I.F.
+ * and 0 when the trigger is restricted to a scenario other than H.I.F. (`HIF_SCENARIOS`).
  */
 
-import type { ConditionRef, FilterRef, ParsedTrigger } from "../data/contract.ts";
+import type { ConditionRef, FilterRef, ParsedTrigger } from "../data/cards.ts";
 import { STATS, type Stat } from "./types.ts";
 
-/** The sibling's id for H.I.F., the scenario a trigger may be restricted to and still fire here. */
-export const HIF_SCENARIO = "hif";
+/**
+ * The game's tokens for H.I.F., the scenario a trigger may be restricted to and still fire here: the
+ * word after `for_` in a trigger id, as gkms-library writes it (the library plan's decision L3).
+ */
+export const HIF_SCENARIOS: ReadonlySet<string> = new Set(["hif", "hif_memory"]);
 
 /** How many times each thing happens: what `occurrences` narrows. */
 export interface Counts {
@@ -56,7 +59,7 @@ function filterCount(occasion: string, f: FilterRef, counts: Counts, n: number):
 
 /** How many times `trigger` fires under `counts`, and never more than `left` when one is given. */
 export function occurrences(trigger: ParsedTrigger, counts: Counts, left?: number): number {
-  if (trigger.scenario !== undefined && trigger.scenario !== HIF_SCENARIO) return 0;
+  if (trigger.scenario !== undefined && !HIF_SCENARIOS.has(trigger.scenario)) return 0;
   let n = counts.occasions[trigger.occasion] ?? 0;
   for (const f of trigger.filters ?? []) n = Math.min(n, filterCount(trigger.occasion, f, counts, n));
   for (const c of trigger.conditions ?? []) n = Math.min(n, counts.conditions[conditionKey(trigger.occasion, c)] ?? n);

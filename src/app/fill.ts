@@ -5,7 +5,7 @@
  * check, never guessed. Pure.
  */
 
-import type { Card, LevelLimits } from "../data/contract.ts";
+import type { Card, LevelLimits } from "../data/cards.ts";
 import { WAPPEN_FIRES_PER_RUN } from "../engine/star.ts";
 import { type DeckSlot, STATS, type Stat, WAPPEN } from "../engine/types.ts";
 import { isMedalMoja } from "../reader/custom.ts";

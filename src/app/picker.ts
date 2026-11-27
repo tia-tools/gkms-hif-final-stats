@@ -1,6 +1,6 @@
 /** Which cards the picker shows. Pure. */
 
-import type { Card, CardType, Rarity } from "../data/contract.ts";
+import type { Card, CardType, Rarity } from "../data/cards.ts";
 
 export interface PickerFilter {
   query: string;

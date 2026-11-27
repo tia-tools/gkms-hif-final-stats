@@ -3,7 +3,7 @@
  * Pure.
  */
 
-import type { Card } from "../data/contract.ts";
+import type { Card } from "../data/cards.ts";
 import { WAPPEN } from "../engine/types.ts";
 
 export interface ItemChoice {

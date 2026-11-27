@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import type { Card, CardType, Rarity } from "../data/contract.ts";
+import type { Card, CardType, Rarity } from "../data/cards.ts";
 import { Chip } from "./Fields.tsx";
 import { thumbnailUrl } from "./images.ts";
 import { type PickerFilter, pickable } from "./picker.ts";

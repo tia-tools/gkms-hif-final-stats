@@ -4,7 +4,7 @@
  * those fires add under a set of counts.
  */
 
-import type { Card, ClassifiedEffect, ParsedTrigger } from "../data/contract.ts";
+import type { Card, ClassifiedEffect, ParsedTrigger } from "../data/cards.ts";
 import { type Counts, conditionKey, occurrences } from "./count.ts";
 import { SENBATSU } from "./honsen-profile.ts";
 import type { DeckSlot, HeldItem } from "./types.ts";

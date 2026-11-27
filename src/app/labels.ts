@@ -4,7 +4,7 @@
  * gakumas-supportcards' src/app/count-labels.ts at d08f3de, without its route-count helpers.
  */
 
-import type { ConditionRef, FilterRef, ParsedTrigger } from "../data/contract.ts";
+import type { ConditionRef, FilterRef, ParsedTrigger } from "../data/cards.ts";
 
 /** Occasion → what happens, without the trailing 「時」. */
 export const OCCASION_LABEL: Readonly<Record<string, string>> = {
@@ -45,6 +45,7 @@ const MEMBER_LABEL: Readonly<Record<string, Readonly<Record<string, string>>>> =
     full_power: "全力",
     preservation: "温存",
   },
+  plan: { sense: "センス", logic: "ロジック", anomaly: "アノマリー" },
 };
 
 const FAMILY_LABEL: Readonly<Record<string, string>> = {
@@ -53,6 +54,7 @@ const FAMILY_LABEL: Readonly<Record<string, string>> = {
   rarity: "レアリティ",
   cardName: "カード名",
   effectGroup: "効果",
+  plan: "プラン",
 };
 
 const STAT_KIND: Readonly<Record<string, string>> = { vocal: "ボーカル", dance: "ダンス", visual: "ビジュアル" };

@@ -4,7 +4,7 @@
  * `src/reader/`, and what it puts into the form is `fill.ts`.
  */
 
-import type { CardDataFile } from "../data/contract.ts";
+import type { CardDataFile } from "../data/cards.ts";
 import { integral } from "../reader/cards.ts";
 import { iconTemplate } from "../reader/items.ts";
 import type { Raster } from "../reader/raster.ts";

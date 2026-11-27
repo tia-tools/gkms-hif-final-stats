@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
-import type { CardDataFile } from "../data/contract.ts";
-import { parseCardData } from "../data/load.ts";
+import { type CardDataFile, parseCardData } from "../data/cards.ts";
 import { Breakdown } from "./Breakdown.tsx";
 import { CAP_STORAGE_KEY, capLevelOf, capOf } from "./cap.ts";
 import { compute } from "./compute.ts";

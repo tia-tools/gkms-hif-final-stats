@@ -4,7 +4,7 @@
  * fires left of the abilities on it. Pure.
  */
 
-import type { ParsedTrigger } from "../data/contract.ts";
+import type { ParsedTrigger } from "../data/cards.ts";
 import { conditionKey, filterKey } from "../engine/count.ts";
 import type { BestResult, PanelState } from "../engine/total.ts";
 import { conditionLabel, memberLabel, occasionLabel } from "./labels.ts";
