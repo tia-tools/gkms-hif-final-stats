@@ -19,7 +19,7 @@ Every document should be self-sufficient: the reader should never need to hunt f
 When writing complex features or significant refactors, use an ExecPlan (as described in `docs/PLANS.md`) from design to implementation. ExecPlans are the persistence layer for cross-session development — they carry forward all context, decisions, and progress so that a fresh session can continue the work without loss. Completed plans are immutable history; when one finishes, run the close-out ritual (`close-out` skill) to extract its durable decisions before moving on.
 
 - `docs/plans/EXECPLAN_HIF_FINAL_STATS.md` — **complete** (2026-10-29): the page is live at `https://gkms-hif-final-stats.tia.run` and reads all six sample pairs right there, the DMM pair as 6971, S5 short by 73 (its Progress, the last two entries). Its open items are issues on the board: #13 and #19–#24.
-- `docs/plans/EXECPLAN_LIBRARY_DATA.md` — **in progress** (issue #34): the card data and images come from gkms-library instead of gakumas-supportcards; the release and its live check remain.
+- `docs/plans/EXECPLAN_LIBRARY_DATA.md` — **complete** (2026-11-27, issue #34): the card data and images come from gkms-library instead of gakumas-supportcards. Released in PR #38; the live page reads the DMM pair as 6971 with every data and image request to `gkms-library.tia.run` (its Progress, Milestone 5). Left outside this repository: gakumas-supportcards can drop `cards.v1.json`.
 
 ## Durable Decisions (ADRs)
 
@@ -53,7 +53,7 @@ Every floored product is computed in integers, because floating point floors 120
 - `support-cards.v1.ts` and `latest.v1.ts`: the library's format files, copied verbatim from `https://gkms-library.tia.run/formats/`; never edit them. `formats.test.ts` pins their SHA-256, and a change of shape is a new version the library publishes beside the old one.
 - `cards.ts`: the types the app uses and `parseCardData`, the format's own `parse`. One bad value, an unknown field or an empty card list refuses the file, with the place named (per `docs/plans/EXECPLAN_LIBRARY_DATA.md`, decision L1).
 - `fetch.ts`: `fetchCardData` fetches the pointer, then the release it names, and checks both (decision L5).
-- `fixtures/support-cards.v1.json`: a real release, used by the tests; `docs/plans/EXECPLAN_LIBRARY_DATA.md` § Concrete Steps says how to refresh it.
+- `fixtures/support-cards.v1.json`: a real release, used by the tests; `docs/plans/EXECPLAN_LIBRARY_DATA.md` § Concrete Steps says how to refresh it. A refresh that adds cards also needs their art and item icons in `src/reader/fixtures/w192/` and `w48/` (from `https://gkms-library.tia.run/img/`), or the reader's tests fail (the plan's § Outcomes & Retrospective).
 
 Each `unread` entry of a deck card is one 「未計上」 entry in the panel (`uncountedCards` in `total.ts`); a trigger restricted to `hif` or `hif_memory` fires here (decisions L2, L3).
 

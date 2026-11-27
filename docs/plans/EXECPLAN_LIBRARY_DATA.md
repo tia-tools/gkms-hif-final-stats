@@ -24,8 +24,9 @@ How to see it working: `bun run dev`, open `http://localhost:5173`, and watch th
 - [x] (2026-11-27 14:35Z) Milestone 4, remaining: `docs/adr/0003-card-data-and-art-come-from-gkms-library-fetched-by-the-browser.md` written, ADR 0001 marked superseded (its text kept); `CLAUDE.md`, `README.md` and `infra/worker/README.md` describe the library and the assets-only deployment.
 - [x] (2026-11-27 14:38Z) Codex review of the branch's whole diff against `develop` (fixtures excluded), codex-cli 0.150.1 in a read-only snapshot: `CODEX VERDICT: LGTM`, no findings to act on (sandbox held; the repository's refs unchanged). Gates on HEAD: 234 pass, type check, lint and build clean.
 - [x] (2026-11-27 14:58Z) Pushed `feat/gkms-library` on the user's approval (job #36) and opened PR #37 into `develop` (`Closes #34`).
-- [ ] The user merges PR #37.
-- [ ] Milestone 5: the release (a PR from `develop` into `main`, merged by the user) and the live check that nothing reads `gakumas-supportcards.tia.run`.
+- [x] (2026-11-27) The user merged PR #37 into `develop` (merge f6d5d2a); GitHub closed #34.
+- [x] (2026-11-27 17:07Z) Milestone 5: release PR #38 (`develop` into `main`) opened; the session's own merge was refused by the permission classifier, so the user merged it (merge 07543f5). Deploy run 46039100604 passed every gate and deployed version 971d4604 of the Worker `gkms-hif-final-stats` (`Uploaded 3 files`, no bindings). Live: the page answers 200; `/data/cards.json` and `/img/w192/img_general_csprt-3-0099_full.webp` answer 404; the live bundle names `gkms-library.tia.run` and neither `gakumas-supportcards` nor `/data/cards.json`. In Chrome on the live page, the DMM pair (`src/reader/fixtures/dmm-01-kihon.png`, `dmm-01-hensei.png`) filled all six deck cards and the three P-items and read S5 7044, short by 73 (total 6971); 247 resource requests went to `gkms-library.tia.run` (the pointer, the release and the images) and none to supportcards.
+- [x] (2026-11-27 17:08Z) Closed out on branch `docs/close-out-library-data` (issue #39): retrospective written, no new ADR (L1 and L5 are ADR 0003; the rest fails the three gates), ADR 0003 given the live evidence, `CLAUDE.md` marks this plan complete. The plan is immutable from here.
 
 ## Surprises & Discoveries
 
@@ -62,7 +63,11 @@ How to see it working: `bun run dev`, open `http://localhost:5173`, and watch th
 
 ## Outcomes & Retrospective
 
-Nothing yet.
+Achieved, against the purpose: the live page reads its support cards and its images from gkms-library and nothing from gakumas-supportcards or the bucket `tia-assets`. The DMM sample still reads 6971, S5 short by 73, on the live page. The card `s_card-3-0114` now carries its ロジック-filtered effect, and 「未計上」 lists only effects actually missing from a card. The Worker lost all its code: about 260 lines of Worker code and tests went, replaced by the library's two format files and a 30-line fetch. The deployment is static assets under the same Worker name, and it deployed with the existing token, as decision L5 expected.
+
+What remains, outside this repository: gakumas-supportcards can now stop publishing `cards.v1.json` and its images for this app (step 4 of gkms-library's migration, its decision L6). gkms-memomemo, meant to move first, had not yet moved when this one shipped. Neither blocks anything here. Until the old file and paths go, a redeploy of the previous Worker still works as a fallback.
+
+Lessons. First, the library's design made the move small. Its format files carry the check, so this repository no longer keeps a contract of its own. Its CORS and immutable release names made the Worker unnecessary rather than merely simpler. The open decision (job #35) cost a round trip but not a stall: every milestone that did not depend on it (1, 3, half of 4) was done while it waited. Second, the reader's image snapshot was a hidden dependency of the card fixture: refreshing the fixture to 218 cards broke the reader's tests until the 14 new images were added. A future fixture refresh needs both steps (§ Concrete Steps names only the first). Third, a process slip: two Progress times were typed without reading the clock (13:46Z for an entry made at 14:34Z, 14:41Z for one made at 14:58Z), each caught and corrected in a follow-up commit, and a third (17:10Z for 17:08Z) while writing this close-out. The global configuration already notes this failure, and that a tool writing the time is the fix, not more prose.
 
 ## Context and Orientation
 
@@ -126,3 +131,5 @@ Valibot `^1` (the format files import `* as v from "valibot"`). In `src/data/car
     export function parseCardData(json: unknown): CardDataFile;   // throws Error naming the first bad value's path
 
 In `src/engine/total.ts`, `BestResult` carries `uncounted: { cardId: string; name: string; reasons: string[] }[]` in place of `held: HeldCard[]`.
+
+Revision note (2026-11-27, close-out): Progress records the merge of PR #37, the release (#38) and its live verification, and the close-out. The retrospective is written. No other section changed.
