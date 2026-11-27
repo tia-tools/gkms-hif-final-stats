@@ -6,8 +6,7 @@
  * browser to remember the miss for four hours.
  */
 
-/** gkms-library's public address. */
-export const LIBRARY = "https://gkms-library.tia.run";
+import { LIBRARY } from "../data/fetch.ts";
 
 export function thumbnailUrl(assetId: string): string {
   return `${LIBRARY}/img/w192/img_general_${assetId}_full.webp`;

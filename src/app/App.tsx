@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
-import { type CardDataFile, parseCardData } from "../data/cards.ts";
+import type { CardDataFile } from "../data/cards.ts";
+import { fetchCardData } from "../data/fetch.ts";
 import { Breakdown } from "./Breakdown.tsx";
 import { CAP_STORAGE_KEY, capLevelOf, capOf } from "./cap.ts";
 import { compute } from "./compute.ts";
@@ -15,12 +16,12 @@ import { useUrlForm } from "./useUrlForm.ts";
 
 type CardData = { status: "loading" } | { status: "ready"; data: CardDataFile } | { status: "failed" };
 
-/** The card data at this origin (decision G14); a failure leaves the form usable without card pickers. */
+/** The card data from gkms-library (the library plan's L5); a failure leaves the form usable without card pickers. */
 function useCardData(): CardData {
   const [state, setState] = useState<CardData>({ status: "loading" });
   useEffect(() => {
-    fetch("/data/cards.json")
-      .then(async (res) => (res.ok ? setState({ status: "ready", data: parseCardData(await res.json()) }) : setState({ status: "failed" })))
+    fetchCardData((url) => fetch(url))
+      .then((data) => setState({ status: "ready", data }))
       .catch(() => setState({ status: "failed" }));
   }, []);
   return state;

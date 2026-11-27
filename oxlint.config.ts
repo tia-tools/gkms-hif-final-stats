@@ -50,12 +50,5 @@ export default defineConfig({
       files: ["**/*.test.ts", "**/*.test.tsx"],
       rules: { "max-lines-per-function": ["error", { max: 120, skipBlankLines: true, skipComments: true }] },
     },
-    {
-      // vite.config.ts serves one local file in the dev server only: the card fixture, at a fixed
-      // path. No path comes from outside input. Remove the entry if the dev server starts taking a
-      // file path from a request, or stops serving a file.
-      files: ["vite.config.ts"],
-      rules: { "security/detect-non-literal-fs-filename": "off" },
-    },
   ],
 });
